@@ -7,6 +7,7 @@ A comprehensive web application for managing coffee shop operations, built with 
 ### Backend
 - **Language**: Go (Golang)
 - **Database**: SQL with [sqlc](https://sqlc.dev/) for type-safe SQL code generation
+- **Migrations**: [Goose](https://github.com/pressly/goose) for database migrations
 - **API**: GraphQL
 
 ### Frontend

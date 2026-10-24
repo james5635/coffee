@@ -34,6 +34,25 @@ tasks:
     cmds:
       - sqlc generate
 
+  migrate:
+    desc: Apply database migrations to the local Compose PostgreSQL database
+    dir: backend
+    cmds:
+      - goose -dir db/migrations postgres "{{.DATABASE_URL | default `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable`}}" up
+
+  rollback:
+    desc: Roll back the most recently applied database migration
+    dir: backend
+    cmds:
+      - goose -dir db/migrations postgres "{{.DATABASE_URL | default `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable`}}" down
+
+  seed:
+    desc: Apply database seed data
+    deps: [migrate]
+    dir: backend
+    cmds:
+      - goose -dir db/seeds -no-versioning postgres "{{.DATABASE_URL | default `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable`}}" up
+
   postgres:
     desc: Start PostgreSQL from Docker Compose
     cmds:
