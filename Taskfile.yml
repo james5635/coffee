@@ -1,0 +1,72 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Start the frontend and backend
+    cmds:
+      - task --parallel backend frontend
+
+  dev:
+    desc: Start the frontend and backend
+    cmds:
+      - task --parallel backend frontend
+
+  install:
+    desc: Install frontend and backend dependencies
+    cmds:
+      - task --parallel install:backend install:frontend
+
+  install:frontend:
+    desc: Install frontend dependencies
+    dir: frontend
+    cmds:
+      - npm install
+
+  install:backend:
+    desc: Download backend Go modules
+    dir: backend
+    cmds:
+      - go mod download
+
+  generate:
+    desc: Generate Go database code from SQL queries and schema
+    dir: backend
+    cmds:
+      - sqlc generate
+
+  postgres:
+    desc: Start PostgreSQL from Docker Compose
+    cmds:
+      - docker compose up postgres
+
+  postgres:detached:
+    desc: Start PostgreSQL from Docker Compose in the background
+    cmds:
+      - docker compose up --detach postgres
+
+  frontend:
+    desc: Start the Angular development server
+    dir: frontend
+    cmds:
+      - npm start
+
+  backend:
+    desc: Start the Go API server
+    dir: backend
+    cmds:
+      - go run .
+
+  build:
+    desc: Build the frontend and backend
+    cmds:
+      - task --parallel build:backend build:frontend
+
+  build:frontend:
+    dir: frontend
+    cmds:
+      - npm run build
+
+  build:backend:
+    dir: backend
+    cmds:
+      - go build ./...
