@@ -138,7 +138,7 @@ CREATE TABLE products (
 
 CREATE TABLE modifier_groups (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     min_selections INTEGER NOT NULL DEFAULT 0 CHECK (min_selections >= 0),
     max_selections INTEGER NOT NULL DEFAULT 1 CHECK (max_selections > 0),
     is_required BOOLEAN NOT NULL DEFAULT FALSE,

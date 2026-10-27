@@ -6,10 +6,196 @@ package db
 
 import (
 	"database/sql"
+	"time"
 )
 
-type Author struct {
-	ID   int64
-	Name string
-	Bio  sql.NullString
+type Category struct {
+	ID          int64
+	Name        string
+	Description string
+	SortOrder   int32
+	IsActive    bool
+	CreatedAt   time.Time
+}
+
+type Customer struct {
+	ID          int64
+	UserID      sql.NullInt64
+	DisplayName string
+	Email       sql.NullString
+	Phone       sql.NullString
+	CreatedAt   time.Time
+}
+
+type InventoryItem struct {
+	ID                int64
+	Name              string
+	Unit              string
+	Quantity          string
+	LowStockThreshold string
+	SupplierID        sql.NullInt64
+	UnitCost          sql.NullString
+	IsActive          bool
+	UpdatedAt         time.Time
+}
+
+type Modifier struct {
+	ID          int64
+	GroupID     int64
+	Name        string
+	PriceDelta  string
+	IsAvailable bool
+	SortOrder   int32
+}
+
+type ModifierGroup struct {
+	ID            int64
+	Name          string
+	MinSelections int32
+	MaxSelections int32
+	IsRequired    bool
+	IsActive      bool
+}
+
+type Order struct {
+	ID             int64
+	OrderNumber    sql.NullInt64
+	CustomerID     sql.NullInt64
+	CreatedBy      sql.NullInt64
+	Status         string
+	OrderType      string
+	CustomerName   sql.NullString
+	CustomerEmail  sql.NullString
+	Notes          string
+	Subtotal       string
+	DiscountAmount string
+	TaxAmount      string
+	Total          string
+	Currency       string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	CompletedAt    sql.NullTime
+}
+
+type OrderItem struct {
+	ID                  int64
+	OrderID             int64
+	ProductID           sql.NullInt64
+	ProductName         string
+	Quantity            int32
+	UnitPrice           string
+	LineTotal           string
+	SpecialInstructions string
+}
+
+type OrderItemModifier struct {
+	ID           int64
+	OrderItemID  int64
+	ModifierID   sql.NullInt64
+	ModifierName string
+	PriceDelta   string
+}
+
+type Payment struct {
+	ID                int64
+	OrderID           int64
+	RecordedBy        sql.NullInt64
+	Kind              string
+	Status            string
+	Method            string
+	Amount            string
+	ExternalReference sql.NullString
+	CreatedAt         time.Time
+	SettledAt         sql.NullTime
+}
+
+type Permission struct {
+	ID          int64
+	Code        string
+	Description string
+}
+
+type Product struct {
+	ID          int64
+	CategoryID  sql.NullInt64
+	Name        string
+	Description string
+	Price       string
+	Sku         sql.NullString
+	IsAvailable bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type ProductModifierGroup struct {
+	ProductID int64
+	GroupID   int64
+	SortOrder int32
+}
+
+type ProductRecipe struct {
+	ProductID       int64
+	InventoryItemID int64
+	Quantity        string
+}
+
+type Role struct {
+	ID          int64
+	Name        string
+	Description string
+	IsSystem    bool
+	CreatedAt   time.Time
+}
+
+type RolePermission struct {
+	RoleID       int64
+	PermissionID int64
+}
+
+type ShopSetting struct {
+	ID        int16
+	Name      string
+	Currency  string
+	Timezone  string
+	TaxRate   string
+	UpdatedAt time.Time
+	UpdatedBy sql.NullInt64
+}
+
+type StockMovement struct {
+	ID              int64
+	InventoryItemID int64
+	QuantityDelta   string
+	Reason          string
+	Note            string
+	RecordedBy      sql.NullInt64
+	CreatedAt       time.Time
+}
+
+type Supplier struct {
+	ID          int64
+	Name        string
+	ContactName sql.NullString
+	Email       sql.NullString
+	Phone       sql.NullString
+	Notes       string
+	IsActive    bool
+	CreatedAt   time.Time
+}
+
+type User struct {
+	ID           int64
+	Email        string
+	PasswordHash string
+	DisplayName  string
+	Phone        sql.NullString
+	IsActive     bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+type UserRole struct {
+	UserID     int64
+	RoleID     int64
+	AssignedAt time.Time
 }
