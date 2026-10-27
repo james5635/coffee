@@ -8,6 +8,14 @@ SELECT id, user_id, display_name, email, phone, created_at
 FROM customers
 WHERE user_id = $1;
 
+-- name: GetOrCreateCustomerForUser :one
+INSERT INTO customers (user_id, display_name, email)
+SELECT users.id, users.display_name, users.email
+FROM users
+WHERE users.id = $1 AND users.is_active
+ON CONFLICT (user_id) DO UPDATE SET user_id = EXCLUDED.user_id
+RETURNING id, user_id, display_name, email, phone, created_at;
+
 -- name: CreateOrder :one
 INSERT INTO orders (
     customer_id, created_by, order_type, customer_name, customer_email, notes,
@@ -36,6 +44,14 @@ SELECT id, order_number, customer_id, created_by, status, order_type,
        tax_amount, total, currency, created_at, updated_at, completed_at
 FROM orders
 WHERE id = $1;
+
+-- name: GetOrderForUpdate :one
+SELECT id, order_number, customer_id, created_by, status, order_type,
+       customer_name, customer_email, notes, subtotal, discount_amount,
+       tax_amount, total, currency, created_at, updated_at, completed_at
+FROM orders
+WHERE id = $1
+FOR UPDATE;
 
 -- name: ListOrders :many
 SELECT id, order_number, customer_id, created_by, status, order_type,
@@ -76,11 +92,11 @@ FROM order_item_modifiers
 WHERE order_item_id = $1
 ORDER BY id;
 
--- name: UpdateOrderStatus :one
+-- name: UpdateOrderStatusIfCurrent :one
 UPDATE orders
 SET status = $2, updated_at = now(),
     completed_at = CASE WHEN $2 = 'completed' THEN now() ELSE completed_at END
-WHERE id = $1
+WHERE id = $1 AND status = $3
 RETURNING id, order_number, customer_id, created_by, status, order_type,
           customer_name, customer_email, notes, subtotal, discount_amount,
           tax_amount, total, currency, created_at, updated_at, completed_at;
@@ -96,6 +112,19 @@ INSERT INTO payments (order_id, recorded_by, kind, method, amount, external_refe
 VALUES ($1, $2, 'payment', $3, $4, $5)
 RETURNING id, order_id, recorded_by, kind, status, method, amount,
           external_reference, created_at, settled_at;
+
+-- name: RecordSuccessfulPayment :one
+INSERT INTO payments (order_id, recorded_by, kind, status, method, amount, external_reference, settled_at)
+VALUES ($1, $2, 'payment', 'succeeded', $3, $4, $5, now())
+RETURNING id, order_id, recorded_by, kind, status, method, amount,
+          external_reference, created_at, settled_at;
+
+-- name: GetOrderPaymentBalance :one
+SELECT
+    COALESCE(SUM(CASE WHEN kind = 'payment' THEN amount ELSE 0 END), 0)::NUMERIC(12,2) AS paid_total,
+    COALESCE(SUM(CASE WHEN kind = 'refund' THEN amount ELSE 0 END), 0)::NUMERIC(12,2) AS refunded_total
+FROM payments
+WHERE order_id = $1 AND status = 'succeeded';
 
 -- name: SetPaymentStatus :one
 UPDATE payments

@@ -1,28 +1,162 @@
-# GraphQL schema example
-#
-# https://gqlgen.com/getting-started/
+scalar Decimal
+scalar Time
 
-type Todo {
-  id: ID!
-  text: String!
-  done: Boolean!
-  user: User!
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
 }
 
-type User {
+enum OrderType {
+  TAKEAWAY
+  DINE_IN
+  DELIVERY
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+  OTHER
+}
+
+enum PaymentKind {
+  PAYMENT
+  REFUND
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+type Category {
   id: ID!
   name: String!
+  description: String!
+  sortOrder: Int!
+}
+
+type Product {
+  id: ID!
+  categoryId: ID
+  name: String!
+  description: String!
+  price: Decimal!
+  sku: String
+  modifierGroups: [ModifierGroup!]!
+}
+
+type ModifierGroup {
+  id: ID!
+  name: String!
+  minSelections: Int!
+  maxSelections: Int!
+  isRequired: Boolean!
+  sortOrder: Int!
+  modifiers: [Modifier!]!
+}
+
+type Modifier {
+  id: ID!
+  name: String!
+  priceDelta: Decimal!
+  sortOrder: Int!
+}
+
+type Order {
+  id: ID!
+  orderNumber: ID!
+  status: OrderStatus!
+  orderType: OrderType!
+  customerName: String
+  customerEmail: String
+  notes: String!
+  subtotal: Decimal!
+  discountAmount: Decimal!
+  taxAmount: Decimal!
+  total: Decimal!
+  currency: String!
+  createdAt: Time!
+  updatedAt: Time!
+  completedAt: Time
+  items: [OrderItem!]!
+  payments: [Payment!]!
+}
+
+type OrderItem {
+  id: ID!
+  productId: ID
+  productName: String!
+  quantity: Int!
+  unitPrice: Decimal!
+  lineTotal: Decimal!
+  specialInstructions: String!
+  modifiers: [OrderItemModifier!]!
+}
+
+type OrderItemModifier {
+  id: ID!
+  modifierId: ID
+  modifierName: String!
+  priceDelta: Decimal!
+}
+
+type Payment {
+  id: ID!
+  kind: PaymentKind!
+  status: PaymentStatus!
+  method: PaymentMethod!
+  amount: Decimal!
+  externalReference: String
+  createdAt: Time!
+  settledAt: Time
+}
+
+input PlaceOrderInput {
+  orderType: OrderType!
+  customerName: String
+  customerEmail: String
+  notes: String
+  items: [PlaceOrderItemInput!]!
+}
+
+input PlaceOrderItemInput {
+  productId: ID!
+  quantity: Int!
+  modifierIds: [ID!]
+  specialInstructions: String
+}
+
+input RecordPaymentInput {
+  orderId: ID!
+  method: PaymentMethod!
+  amount: Decimal!
+  externalReference: String
+}
+
+input IssueRefundInput {
+  orderId: ID!
+  method: PaymentMethod!
+  amount: Decimal!
+  externalReference: String
 }
 
 type Query {
-  todos: [Todo!]!
-}
-
-input NewTodo {
-  text: String!
-  userId: String!
+  categories: [Category!]!
+  products(categoryId: ID): [Product!]!
+  order(id: ID!): Order!
+  preparationQueue: [Order!]!
 }
 
 type Mutation {
-  createTodo(input: NewTodo!): Todo!
+  placeOrder(input: PlaceOrderInput!): Order!
+  advanceOrderStatus(orderId: ID!, status: OrderStatus!): Order!
+  recordPayment(input: RecordPaymentInput!): Payment!
+  issueRefund(input: IssueRefundInput!): Payment!
 }

@@ -7,19 +7,169 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"strings"
 
 	"github.com/james5635/coffee/backend/graph/model"
+	"github.com/james5635/coffee/backend/service"
+	"github.com/james5635/coffee/backend/service/domain"
 )
 
-// CreateTodo is the resolver for the createTodo field.
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+// PlaceOrder is the resolver for the placeOrder field.
+func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.PlaceOrderInput) (*model.Order, error) {
+	items := make([]service.PlaceOrderItemInput, 0, len(input.Items))
+	for _, item := range input.Items {
+		if item == nil {
+			return nil, service.ErrInvalidInput
+		}
+		productID, err := parseGraphID(item.ProductID)
+		if err != nil {
+			return nil, err
+		}
+		modifierIDs := make([]int64, 0, len(item.ModifierIds))
+		for _, id := range item.ModifierIds {
+			parsed, err := parseGraphID(id)
+			if err != nil {
+				return nil, err
+			}
+			modifierIDs = append(modifierIDs, parsed)
+		}
+		specialInstructions := ""
+		if item.SpecialInstructions != nil {
+			specialInstructions = *item.SpecialInstructions
+		}
+		items = append(items, service.PlaceOrderItemInput{
+			ProductID: productID, Quantity: item.Quantity, ModifierIDs: modifierIDs,
+			SpecialInstructions: specialInstructions,
+		})
+	}
+	notes := ""
+	if input.Notes != nil {
+		notes = *input.Notes
+	}
+	order, err := r.Orders.PlaceOrder(ctx, service.PlaceOrderInput{
+		OrderType:    domain.OrderType(strings.ToLower(string(input.OrderType))),
+		CustomerName: input.CustomerName, CustomerEmail: input.CustomerEmail,
+		Notes: notes, Items: items,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return graphOrder(order), nil
 }
 
-// Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
+// AdvanceOrderStatus is the resolver for the advanceOrderStatus field.
+func (r *mutationResolver) AdvanceOrderStatus(ctx context.Context, orderID string, status model.OrderStatus) (*model.Order, error) {
+	id, err := parseGraphID(orderID)
+	if err != nil {
+		return nil, err
+	}
+	order, err := r.Orders.AdvanceStatus(ctx, id, domain.OrderStatus(strings.ToLower(string(status))))
+	if err != nil {
+		return nil, err
+	}
+	return graphOrder(order), nil
+}
+
+// RecordPayment is the resolver for the recordPayment field.
+func (r *mutationResolver) RecordPayment(ctx context.Context, input model.RecordPaymentInput) (*model.Payment, error) {
+	orderID, err := parseGraphID(input.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	amount, err := parseGraphMoney(input.Amount)
+	if err != nil {
+		return nil, err
+	}
+	payment, err := r.Payments.RecordPayment(ctx, service.RecordPaymentInput{
+		OrderID: orderID, Method: domain.PaymentMethod(strings.ToLower(string(input.Method))),
+		Amount: amount, ExternalReference: input.ExternalReference,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := graphPayment(payment)
+	return result, nil
+}
+
+// IssueRefund is the resolver for the issueRefund field.
+func (r *mutationResolver) IssueRefund(ctx context.Context, input model.IssueRefundInput) (*model.Payment, error) {
+	orderID, err := parseGraphID(input.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	amount, err := parseGraphMoney(input.Amount)
+	if err != nil {
+		return nil, err
+	}
+	payment, err := r.Payments.IssueRefund(ctx, service.IssueRefundInput{
+		OrderID: orderID, Method: domain.PaymentMethod(strings.ToLower(string(input.Method))),
+		Amount: amount, ExternalReference: input.ExternalReference,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := graphPayment(payment)
+	return result, nil
+}
+
+// Categories is the resolver for the categories field.
+func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, error) {
+	categories, err := r.Menu.Categories(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.Category, 0, len(categories))
+	for _, category := range categories {
+		result = append(result, graphCategory(category))
+	}
+	return result, nil
+}
+
+// Products is the resolver for the products field.
+func (r *queryResolver) Products(ctx context.Context, categoryID *string) ([]*model.Product, error) {
+	var id *int64
+	if categoryID != nil {
+		parsed, err := parseGraphID(*categoryID)
+		if err != nil {
+			return nil, err
+		}
+		id = &parsed
+	}
+	products, err := r.Menu.Products(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.Product, 0, len(products))
+	for _, product := range products {
+		result = append(result, graphProduct(product))
+	}
+	return result, nil
+}
+
+// Order is the resolver for the order field.
+func (r *queryResolver) Order(ctx context.Context, id string) (*model.Order, error) {
+	orderID, err := parseGraphID(id)
+	if err != nil {
+		return nil, err
+	}
+	order, err := r.Orders.GetOrder(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+	return graphOrder(order), nil
+}
+
+// PreparationQueue is the resolver for the preparationQueue field.
+func (r *queryResolver) PreparationQueue(ctx context.Context) ([]*model.Order, error) {
+	orders, err := r.Orders.PreparationQueue(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*model.Order, 0, len(orders))
+	for _, order := range orders {
+		result = append(result, graphOrder(order))
+	}
+	return result, nil
 }
 
 // Mutation returns MutationResolver implementation.

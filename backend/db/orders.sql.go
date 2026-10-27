@@ -276,6 +276,29 @@ func (q *Queries) GetCustomerByUserID(ctx context.Context, userID sql.NullInt64)
 	return i, err
 }
 
+const getOrCreateCustomerForUser = `-- name: GetOrCreateCustomerForUser :one
+INSERT INTO customers (user_id, display_name, email)
+SELECT users.id, users.display_name, users.email
+FROM users
+WHERE users.id = $1 AND users.is_active
+ON CONFLICT (user_id) DO UPDATE SET user_id = EXCLUDED.user_id
+RETURNING id, user_id, display_name, email, phone, created_at
+`
+
+func (q *Queries) GetOrCreateCustomerForUser(ctx context.Context, id int64) (Customer, error) {
+	row := q.db.QueryRowContext(ctx, getOrCreateCustomerForUser, id)
+	var i Customer
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.DisplayName,
+		&i.Email,
+		&i.Phone,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getOrderByID = `-- name: GetOrderByID :one
 SELECT id, order_number, customer_id, created_by, status, order_type,
        customer_name, customer_email, notes, subtotal, discount_amount,
@@ -306,6 +329,60 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (Order, error) {
 		&i.UpdatedAt,
 		&i.CompletedAt,
 	)
+	return i, err
+}
+
+const getOrderForUpdate = `-- name: GetOrderForUpdate :one
+SELECT id, order_number, customer_id, created_by, status, order_type,
+       customer_name, customer_email, notes, subtotal, discount_amount,
+       tax_amount, total, currency, created_at, updated_at, completed_at
+FROM orders
+WHERE id = $1
+FOR UPDATE
+`
+
+func (q *Queries) GetOrderForUpdate(ctx context.Context, id int64) (Order, error) {
+	row := q.db.QueryRowContext(ctx, getOrderForUpdate, id)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.OrderNumber,
+		&i.CustomerID,
+		&i.CreatedBy,
+		&i.Status,
+		&i.OrderType,
+		&i.CustomerName,
+		&i.CustomerEmail,
+		&i.Notes,
+		&i.Subtotal,
+		&i.DiscountAmount,
+		&i.TaxAmount,
+		&i.Total,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
+const getOrderPaymentBalance = `-- name: GetOrderPaymentBalance :one
+SELECT
+    COALESCE(SUM(CASE WHEN kind = 'payment' THEN amount ELSE 0 END), 0)::NUMERIC(12,2) AS paid_total,
+    COALESCE(SUM(CASE WHEN kind = 'refund' THEN amount ELSE 0 END), 0)::NUMERIC(12,2) AS refunded_total
+FROM payments
+WHERE order_id = $1 AND status = 'succeeded'
+`
+
+type GetOrderPaymentBalanceRow struct {
+	PaidTotal     string
+	RefundedTotal string
+}
+
+func (q *Queries) GetOrderPaymentBalance(ctx context.Context, orderID int64) (GetOrderPaymentBalanceRow, error) {
+	row := q.db.QueryRowContext(ctx, getOrderPaymentBalance, orderID)
+	var i GetOrderPaymentBalanceRow
+	err := row.Scan(&i.PaidTotal, &i.RefundedTotal)
 	return i, err
 }
 
@@ -591,6 +668,45 @@ func (q *Queries) ListPreparationQueue(ctx context.Context) ([]Order, error) {
 	return items, nil
 }
 
+const recordSuccessfulPayment = `-- name: RecordSuccessfulPayment :one
+INSERT INTO payments (order_id, recorded_by, kind, status, method, amount, external_reference, settled_at)
+VALUES ($1, $2, 'payment', 'succeeded', $3, $4, $5, now())
+RETURNING id, order_id, recorded_by, kind, status, method, amount,
+          external_reference, created_at, settled_at
+`
+
+type RecordSuccessfulPaymentParams struct {
+	OrderID           int64
+	RecordedBy        sql.NullInt64
+	Method            string
+	Amount            string
+	ExternalReference sql.NullString
+}
+
+func (q *Queries) RecordSuccessfulPayment(ctx context.Context, arg RecordSuccessfulPaymentParams) (Payment, error) {
+	row := q.db.QueryRowContext(ctx, recordSuccessfulPayment,
+		arg.OrderID,
+		arg.RecordedBy,
+		arg.Method,
+		arg.Amount,
+		arg.ExternalReference,
+	)
+	var i Payment
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.RecordedBy,
+		&i.Kind,
+		&i.Status,
+		&i.Method,
+		&i.Amount,
+		&i.ExternalReference,
+		&i.CreatedAt,
+		&i.SettledAt,
+	)
+	return i, err
+}
+
 const setPaymentStatus = `-- name: SetPaymentStatus :one
 UPDATE payments
 SET status = $2, settled_at = CASE WHEN $2 = 'succeeded' THEN now() ELSE settled_at END
@@ -622,23 +738,24 @@ func (q *Queries) SetPaymentStatus(ctx context.Context, arg SetPaymentStatusPara
 	return i, err
 }
 
-const updateOrderStatus = `-- name: UpdateOrderStatus :one
+const updateOrderStatusIfCurrent = `-- name: UpdateOrderStatusIfCurrent :one
 UPDATE orders
 SET status = $2, updated_at = now(),
     completed_at = CASE WHEN $2 = 'completed' THEN now() ELSE completed_at END
-WHERE id = $1
+WHERE id = $1 AND status = $3
 RETURNING id, order_number, customer_id, created_by, status, order_type,
           customer_name, customer_email, notes, subtotal, discount_amount,
           tax_amount, total, currency, created_at, updated_at, completed_at
 `
 
-type UpdateOrderStatusParams struct {
-	ID     int64
-	Status string
+type UpdateOrderStatusIfCurrentParams struct {
+	ID       int64
+	Status   string
+	Status_2 string
 }
 
-func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) (Order, error) {
-	row := q.db.QueryRowContext(ctx, updateOrderStatus, arg.ID, arg.Status)
+func (q *Queries) UpdateOrderStatusIfCurrent(ctx context.Context, arg UpdateOrderStatusIfCurrentParams) (Order, error) {
+	row := q.db.QueryRowContext(ctx, updateOrderStatusIfCurrent, arg.ID, arg.Status, arg.Status_2)
 	var i Order
 	err := row.Scan(
 		&i.ID,

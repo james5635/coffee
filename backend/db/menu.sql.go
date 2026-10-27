@@ -74,6 +74,34 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 	return i, err
 }
 
+const getSellableProduct = `-- name: GetSellableProduct :one
+SELECT p.id, p.category_id, p.name, p.description, p.price, p.sku,
+       p.is_available, p.created_at, p.updated_at
+FROM products p
+LEFT JOIN categories c ON c.id = p.category_id
+WHERE p.id = $1
+  AND p.is_available
+  AND (p.category_id IS NULL OR c.is_active)
+FOR SHARE OF p
+`
+
+func (q *Queries) GetSellableProduct(ctx context.Context, id int64) (Product, error) {
+	row := q.db.QueryRowContext(ctx, getSellableProduct, id)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.CategoryID,
+		&i.Name,
+		&i.Description,
+		&i.Price,
+		&i.Sku,
+		&i.IsAvailable,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getShopSettings = `-- name: GetShopSettings :one
 SELECT id, name, currency, timezone, tax_rate, updated_at, updated_by
 FROM shop_settings
@@ -227,26 +255,28 @@ func (q *Queries) ListAvailableProducts(ctx context.Context) ([]ListAvailablePro
 
 const listProductModifierGroups = `-- name: ListProductModifierGroups :many
 SELECT g.id AS group_id, g.name AS group_name, g.min_selections, g.max_selections,
-       g.is_required, m.id AS modifier_id, m.name AS modifier_name,
+       g.is_required, pmg.sort_order AS product_sort_order,
+       m.id AS modifier_id, m.name AS modifier_name,
        m.price_delta, m.is_available, m.sort_order
 FROM product_modifier_groups pmg
 JOIN modifier_groups g ON g.id = pmg.group_id AND g.is_active
-JOIN modifiers m ON m.group_id = g.id AND m.is_available
+LEFT JOIN modifiers m ON m.group_id = g.id AND m.is_available
 WHERE pmg.product_id = $1
-ORDER BY pmg.sort_order, m.sort_order, m.name
+ORDER BY pmg.sort_order, m.sort_order NULLS LAST, m.name NULLS LAST
 `
 
 type ListProductModifierGroupsRow struct {
-	GroupID       int64
-	GroupName     string
-	MinSelections int32
-	MaxSelections int32
-	IsRequired    bool
-	ModifierID    int64
-	ModifierName  string
-	PriceDelta    string
-	IsAvailable   bool
-	SortOrder     int32
+	GroupID          int64
+	GroupName        string
+	MinSelections    int32
+	MaxSelections    int32
+	IsRequired       bool
+	ProductSortOrder int32
+	ModifierID       sql.NullInt64
+	ModifierName     sql.NullString
+	PriceDelta       sql.NullString
+	IsAvailable      sql.NullBool
+	SortOrder        sql.NullInt32
 }
 
 func (q *Queries) ListProductModifierGroups(ctx context.Context, productID int64) ([]ListProductModifierGroupsRow, error) {
@@ -264,6 +294,7 @@ func (q *Queries) ListProductModifierGroups(ctx context.Context, productID int64
 			&i.MinSelections,
 			&i.MaxSelections,
 			&i.IsRequired,
+			&i.ProductSortOrder,
 			&i.ModifierID,
 			&i.ModifierName,
 			&i.PriceDelta,

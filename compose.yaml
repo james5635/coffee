@@ -21,11 +21,16 @@ services:
       dockerfile: Dockerfile
     working_dir: /app
     command: go run .
+    environment:
+      DATABASE_URL: postgres://coffee:coffee@postgres:5432/coffee?sslmode=disable
     ports:
       - "8080:8080"
     volumes:
       - ./backend:/app
       - backend_go_modules:/go/pkg/mod
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:

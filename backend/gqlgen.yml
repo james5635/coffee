@@ -169,6 +169,9 @@ autobind:
 # modelgen, the others will be allowed when binding to fields. Configure them to
 # your liking
 models:
+  Decimal:
+    model:
+      - github.com/james5635/coffee/backend/graph/scalar.Decimal
   ID:
     model:
       - github.com/99designs/gqlgen/graphql.ID

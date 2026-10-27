@@ -2,25 +2,423 @@
 
 package model
 
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
+	"time"
+
+	"github.com/james5635/coffee/backend/graph/scalar"
+)
+
+type Category struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	SortOrder   int32  `json:"sortOrder"`
+}
+
+type IssueRefundInput struct {
+	OrderID           string         `json:"orderId"`
+	Method            PaymentMethod  `json:"method"`
+	Amount            scalar.Decimal `json:"amount"`
+	ExternalReference *string        `json:"externalReference,omitempty"`
+}
+
+type Modifier struct {
+	ID         string         `json:"id"`
+	Name       string         `json:"name"`
+	PriceDelta scalar.Decimal `json:"priceDelta"`
+	SortOrder  int32          `json:"sortOrder"`
+}
+
+type ModifierGroup struct {
+	ID            string      `json:"id"`
+	Name          string      `json:"name"`
+	MinSelections int32       `json:"minSelections"`
+	MaxSelections int32       `json:"maxSelections"`
+	IsRequired    bool        `json:"isRequired"`
+	SortOrder     int32       `json:"sortOrder"`
+	Modifiers     []*Modifier `json:"modifiers"`
+}
+
 type Mutation struct {
 }
 
-type NewTodo struct {
-	Text   string `json:"text"`
-	UserID string `json:"userId"`
+type Order struct {
+	ID             string         `json:"id"`
+	OrderNumber    string         `json:"orderNumber"`
+	Status         OrderStatus    `json:"status"`
+	OrderType      OrderType      `json:"orderType"`
+	CustomerName   *string        `json:"customerName,omitempty"`
+	CustomerEmail  *string        `json:"customerEmail,omitempty"`
+	Notes          string         `json:"notes"`
+	Subtotal       scalar.Decimal `json:"subtotal"`
+	DiscountAmount scalar.Decimal `json:"discountAmount"`
+	TaxAmount      scalar.Decimal `json:"taxAmount"`
+	Total          scalar.Decimal `json:"total"`
+	Currency       string         `json:"currency"`
+	CreatedAt      time.Time      `json:"createdAt"`
+	UpdatedAt      time.Time      `json:"updatedAt"`
+	CompletedAt    *time.Time     `json:"completedAt,omitempty"`
+	Items          []*OrderItem   `json:"items"`
+	Payments       []*Payment     `json:"payments"`
+}
+
+type OrderItem struct {
+	ID                  string               `json:"id"`
+	ProductID           *string              `json:"productId,omitempty"`
+	ProductName         string               `json:"productName"`
+	Quantity            int32                `json:"quantity"`
+	UnitPrice           scalar.Decimal       `json:"unitPrice"`
+	LineTotal           scalar.Decimal       `json:"lineTotal"`
+	SpecialInstructions string               `json:"specialInstructions"`
+	Modifiers           []*OrderItemModifier `json:"modifiers"`
+}
+
+type OrderItemModifier struct {
+	ID           string         `json:"id"`
+	ModifierID   *string        `json:"modifierId,omitempty"`
+	ModifierName string         `json:"modifierName"`
+	PriceDelta   scalar.Decimal `json:"priceDelta"`
+}
+
+type Payment struct {
+	ID                string         `json:"id"`
+	Kind              PaymentKind    `json:"kind"`
+	Status            PaymentStatus  `json:"status"`
+	Method            PaymentMethod  `json:"method"`
+	Amount            scalar.Decimal `json:"amount"`
+	ExternalReference *string        `json:"externalReference,omitempty"`
+	CreatedAt         time.Time      `json:"createdAt"`
+	SettledAt         *time.Time     `json:"settledAt,omitempty"`
+}
+
+type PlaceOrderInput struct {
+	OrderType     OrderType              `json:"orderType"`
+	CustomerName  *string                `json:"customerName,omitempty"`
+	CustomerEmail *string                `json:"customerEmail,omitempty"`
+	Notes         *string                `json:"notes,omitempty"`
+	Items         []*PlaceOrderItemInput `json:"items"`
+}
+
+type PlaceOrderItemInput struct {
+	ProductID           string   `json:"productId"`
+	Quantity            int32    `json:"quantity"`
+	ModifierIds         []string `json:"modifierIds,omitempty"`
+	SpecialInstructions *string  `json:"specialInstructions,omitempty"`
+}
+
+type Product struct {
+	ID             string           `json:"id"`
+	CategoryID     *string          `json:"categoryId,omitempty"`
+	Name           string           `json:"name"`
+	Description    string           `json:"description"`
+	Price          scalar.Decimal   `json:"price"`
+	Sku            *string          `json:"sku,omitempty"`
+	ModifierGroups []*ModifierGroup `json:"modifierGroups"`
 }
 
 type Query struct {
 }
 
-type Todo struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
-	Done bool   `json:"done"`
-	User *User  `json:"user"`
+type RecordPaymentInput struct {
+	OrderID           string         `json:"orderId"`
+	Method            PaymentMethod  `json:"method"`
+	Amount            scalar.Decimal `json:"amount"`
+	ExternalReference *string        `json:"externalReference,omitempty"`
 }
 
-type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+type OrderStatus string
+
+const (
+	OrderStatusPending   OrderStatus = "PENDING"
+	OrderStatusAccepted  OrderStatus = "ACCEPTED"
+	OrderStatusPreparing OrderStatus = "PREPARING"
+	OrderStatusReady     OrderStatus = "READY"
+	OrderStatusCompleted OrderStatus = "COMPLETED"
+	OrderStatusCancelled OrderStatus = "CANCELLED"
+)
+
+var AllOrderStatus = []OrderStatus{
+	OrderStatusPending,
+	OrderStatusAccepted,
+	OrderStatusPreparing,
+	OrderStatusReady,
+	OrderStatusCompleted,
+	OrderStatusCancelled,
+}
+
+func (e OrderStatus) IsValid() bool {
+	switch e {
+	case OrderStatusPending, OrderStatusAccepted, OrderStatusPreparing, OrderStatusReady, OrderStatusCompleted, OrderStatusCancelled:
+		return true
+	}
+	return false
+}
+
+func (e OrderStatus) String() string {
+	return string(e)
+}
+
+func (e *OrderStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderStatus", str)
+	}
+	return nil
+}
+
+func (e OrderStatus) MarshalGQL(w io.Writer) {
+	_, _ = fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OrderStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type OrderType string
+
+const (
+	OrderTypeTakeaway OrderType = "TAKEAWAY"
+	OrderTypeDineIn   OrderType = "DINE_IN"
+	OrderTypeDelivery OrderType = "DELIVERY"
+)
+
+var AllOrderType = []OrderType{
+	OrderTypeTakeaway,
+	OrderTypeDineIn,
+	OrderTypeDelivery,
+}
+
+func (e OrderType) IsValid() bool {
+	switch e {
+	case OrderTypeTakeaway, OrderTypeDineIn, OrderTypeDelivery:
+		return true
+	}
+	return false
+}
+
+func (e OrderType) String() string {
+	return string(e)
+}
+
+func (e *OrderType) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OrderType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OrderType", str)
+	}
+	return nil
+}
+
+func (e OrderType) MarshalGQL(w io.Writer) {
+	_, _ = fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OrderType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type PaymentKind string
+
+const (
+	PaymentKindPayment PaymentKind = "PAYMENT"
+	PaymentKindRefund  PaymentKind = "REFUND"
+)
+
+var AllPaymentKind = []PaymentKind{
+	PaymentKindPayment,
+	PaymentKindRefund,
+}
+
+func (e PaymentKind) IsValid() bool {
+	switch e {
+	case PaymentKindPayment, PaymentKindRefund:
+		return true
+	}
+	return false
+}
+
+func (e PaymentKind) String() string {
+	return string(e)
+}
+
+func (e *PaymentKind) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PaymentKind(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PaymentKind", str)
+	}
+	return nil
+}
+
+func (e PaymentKind) MarshalGQL(w io.Writer) {
+	_, _ = fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PaymentKind) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PaymentKind) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type PaymentMethod string
+
+const (
+	PaymentMethodCash   PaymentMethod = "CASH"
+	PaymentMethodCard   PaymentMethod = "CARD"
+	PaymentMethodOnline PaymentMethod = "ONLINE"
+	PaymentMethodOther  PaymentMethod = "OTHER"
+)
+
+var AllPaymentMethod = []PaymentMethod{
+	PaymentMethodCash,
+	PaymentMethodCard,
+	PaymentMethodOnline,
+	PaymentMethodOther,
+}
+
+func (e PaymentMethod) IsValid() bool {
+	switch e {
+	case PaymentMethodCash, PaymentMethodCard, PaymentMethodOnline, PaymentMethodOther:
+		return true
+	}
+	return false
+}
+
+func (e PaymentMethod) String() string {
+	return string(e)
+}
+
+func (e *PaymentMethod) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PaymentMethod(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PaymentMethod", str)
+	}
+	return nil
+}
+
+func (e PaymentMethod) MarshalGQL(w io.Writer) {
+	_, _ = fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PaymentMethod) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PaymentMethod) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type PaymentStatus string
+
+const (
+	PaymentStatusPending   PaymentStatus = "PENDING"
+	PaymentStatusSucceeded PaymentStatus = "SUCCEEDED"
+	PaymentStatusFailed    PaymentStatus = "FAILED"
+	PaymentStatusCancelled PaymentStatus = "CANCELLED"
+)
+
+var AllPaymentStatus = []PaymentStatus{
+	PaymentStatusPending,
+	PaymentStatusSucceeded,
+	PaymentStatusFailed,
+	PaymentStatusCancelled,
+}
+
+func (e PaymentStatus) IsValid() bool {
+	switch e {
+	case PaymentStatusPending, PaymentStatusSucceeded, PaymentStatusFailed, PaymentStatusCancelled:
+		return true
+	}
+	return false
+}
+
+func (e PaymentStatus) String() string {
+	return string(e)
+}
+
+func (e *PaymentStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = PaymentStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid PaymentStatus", str)
+	}
+	return nil
+}
+
+func (e PaymentStatus) MarshalGQL(w io.Writer) {
+	_, _ = fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *PaymentStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e PaymentStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
