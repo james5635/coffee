@@ -14,7 +14,7 @@ func NewPaymentService(repository repository.PaymentRepository) PaymentService {
 	return &paymentService{repository: repository}
 }
 
-func (s *paymentService) RecordPayment(ctx context.Context, input RecordPaymentInput) (domain.Payment, error) {
+func (s *paymentService) RecordPayment(ctx context.Context, input domain.RecordPaymentInput) (domain.Payment, error) {
 	principal, err := principalFor(ctx)
 	if err != nil {
 		return domain.Payment{}, err
@@ -55,7 +55,7 @@ func (s *paymentService) RecordPayment(ctx context.Context, input RecordPaymentI
 	return recorded, err
 }
 
-func (s *paymentService) IssueRefund(ctx context.Context, input IssueRefundInput) (domain.Payment, error) {
+func (s *paymentService) IssueRefund(ctx context.Context, input domain.IssueRefundInput) (domain.Payment, error) {
 	principal, err := principalFor(ctx)
 	if err != nil {
 		return domain.Payment{}, err

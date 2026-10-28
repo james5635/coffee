@@ -25,7 +25,7 @@ type pricedLine struct {
 	note      string
 }
 
-func (s *orderService) PlaceOrder(ctx context.Context, input PlaceOrderInput) (domain.Order, error) {
+func (s *orderService) PlaceOrder(ctx context.Context, input domain.PlaceOrderInput) (domain.Order, error) {
 	if len(input.Items) == 0 {
 		return domain.Order{}, fmt.Errorf("%w: order must contain at least one item", ErrInvalidInput)
 	}

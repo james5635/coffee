@@ -16,7 +16,7 @@ import (
 
 // PlaceOrder is the resolver for the placeOrder field.
 func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.PlaceOrderInput) (*model.Order, error) {
-	items := make([]service.PlaceOrderItemInput, 0, len(input.Items))
+	items := make([]domain.PlaceOrderItemInput, 0, len(input.Items))
 	for _, item := range input.Items {
 		if item == nil {
 			return nil, service.ErrInvalidInput
@@ -37,7 +37,7 @@ func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.PlaceOrde
 		if item.SpecialInstructions != nil {
 			specialInstructions = *item.SpecialInstructions
 		}
-		items = append(items, service.PlaceOrderItemInput{
+		items = append(items, domain.PlaceOrderItemInput{
 			ProductID: productID, Quantity: item.Quantity, ModifierIDs: modifierIDs,
 			SpecialInstructions: specialInstructions,
 		})
@@ -46,7 +46,7 @@ func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.PlaceOrde
 	if input.Notes != nil {
 		notes = *input.Notes
 	}
-	order, err := r.Orders.PlaceOrder(ctx, service.PlaceOrderInput{
+	order, err := r.Orders.PlaceOrder(ctx, domain.PlaceOrderInput{
 		OrderType:    domain.OrderType(strings.ToLower(string(input.OrderType))),
 		CustomerName: input.CustomerName, CustomerEmail: input.CustomerEmail,
 		Notes: notes, Items: items,
@@ -80,7 +80,7 @@ func (r *mutationResolver) RecordPayment(ctx context.Context, input model.Record
 	if err != nil {
 		return nil, err
 	}
-	payment, err := r.Payments.RecordPayment(ctx, service.RecordPaymentInput{
+	payment, err := r.Payments.RecordPayment(ctx, domain.RecordPaymentInput{
 		OrderID: orderID, Method: domain.PaymentMethod(strings.ToLower(string(input.Method))),
 		Amount: amount, ExternalReference: input.ExternalReference,
 	})
@@ -101,7 +101,7 @@ func (r *mutationResolver) IssueRefund(ctx context.Context, input model.IssueRef
 	if err != nil {
 		return nil, err
 	}
-	payment, err := r.Payments.IssueRefund(ctx, service.IssueRefundInput{
+	payment, err := r.Payments.IssueRefund(ctx, domain.IssueRefundInput{
 		OrderID: orderID, Method: domain.PaymentMethod(strings.ToLower(string(input.Method))),
 		Amount: amount, ExternalReference: input.ExternalReference,
 	})

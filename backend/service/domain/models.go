@@ -162,3 +162,33 @@ type PaymentBalance struct {
 }
 
 func (b PaymentBalance) Net() Money { return b.Paid - b.Refunded }
+
+
+type PlaceOrderInput struct {
+	OrderType     OrderType
+	CustomerName  *string
+	CustomerEmail *string
+	Notes         string
+	Items         []PlaceOrderItemInput
+}
+
+type PlaceOrderItemInput struct {
+	ProductID           int64
+	Quantity            int32
+	ModifierIDs         []int64
+	SpecialInstructions string
+}
+
+type RecordPaymentInput struct {
+	OrderID           int64
+	Method            PaymentMethod
+	Amount            Money
+	ExternalReference *string
+}
+
+type IssueRefundInput struct {
+	OrderID           int64
+	Method            PaymentMethod
+	Amount            Money
+	ExternalReference *string
+}
