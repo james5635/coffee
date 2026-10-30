@@ -119,3 +119,13 @@ func graphPayment(payment repository.Payment) *model.Payment {
 		SettledAt: payment.SettledAt,
 	}
 }
+
+// authPayload maps a service TokenPair to the GraphQL AuthPayload.
+func authPayload(pair service.TokenPair) *model.AuthPayload {
+	return &model.AuthPayload{
+		AccessToken:  pair.AccessToken,
+		RefreshToken: pair.RefreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int32(pair.ExpiresIn),
+	}
+}

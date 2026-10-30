@@ -145,16 +145,6 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-// authPayload maps a service TokenPair to the GraphQL AuthPayload.
-func authPayload(pair service.TokenPair) *model.AuthPayload {
-	return &model.AuthPayload{
-		AccessToken:  pair.AccessToken,
-		RefreshToken: pair.RefreshToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    int32(pair.ExpiresIn),
-	}
-}
-
 // Categories is the resolver for the categories field.
 func (r *queryResolver) Categories(ctx context.Context) ([]*model.Category, error) {
 	categories, err := r.Menu.Categories(ctx)
