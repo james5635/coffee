@@ -53,6 +53,10 @@ func errorCodeAndMessage(err error) (string, string) {
 		return "NOT_FOUND", "The requested record was not found."
 	case errors.Is(err, service.ErrUnauthenticated):
 		return "UNAUTHENTICATED", "Authentication is required."
+	case errors.Is(err, service.ErrTokenExpired):
+		return "TOKEN_EXPIRED", "The access token has expired."
+	case errors.Is(err, service.ErrInvalidRefreshToken):
+		return "INVALID_REFRESH_TOKEN", "The refresh token is invalid."
 	case errors.Is(err, service.ErrForbidden):
 		return "FORBIDDEN", "You are not allowed to perform this operation."
 	case errors.Is(err, service.ErrInsufficient):
