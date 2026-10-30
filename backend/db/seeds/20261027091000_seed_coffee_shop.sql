@@ -89,6 +89,33 @@ SET quantity = i.quantity + movement.quantity_delta, updated_at = now()
 FROM inserted_movements movement
 WHERE i.id = movement.inventory_item_id;
 
+-- Demo users for every role. All accounts use the password "password123".
+-- The bcrypt hashes below were generated with golang.org/x/crypto/bcrypt
+-- (cost 10) and verified against that password.
+INSERT INTO users (email, password_hash, display_name) VALUES
+    ('owner@coffee.local', '$2a$10$lw45sKK.YKkwQ91oen7bo.1K/YiaZTHYbeoghGR8jKCafVaGokfWK', 'Olive Owner'),
+    ('manager@coffee.local', '$2a$10$lw45sKK.YKkwQ91oen7bo.1K/YiaZTHYbeoghGR8jKCafVaGokfWK', 'Manny Manager'),
+    ('cashier@coffee.local', '$2a$10$lw45sKK.YKkwQ91oen7bo.1K/YiaZTHYbeoghGR8jKCafVaGokfWK', 'Cass Cashier'),
+    ('barista@coffee.local', '$2a$10$lw45sKK.YKkwQ91oen7bo.1K/YiaZTHYbeoghGR8jKCafVaGokfWK', 'Bree Barista'),
+    ('customer@coffee.local', '$2a$10$lw45sKK.YKkwQ91oen7bo.1K/YiaZTHYbeoghGR8jKCafVaGokfWK', 'Cara Customer')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+JOIN roles r ON r.name = CASE u.email
+    WHEN 'owner@coffee.local' THEN 'owner_admin'
+    WHEN 'manager@coffee.local' THEN 'manager'
+    WHEN 'cashier@coffee.local' THEN 'cashier'
+    WHEN 'barista@coffee.local' THEN 'barista'
+    WHEN 'customer@coffee.local' THEN 'customer'
+END
+WHERE u.email IN (
+    'owner@coffee.local', 'manager@coffee.local', 'cashier@coffee.local',
+    'barista@coffee.local', 'customer@coffee.local'
+)
+ON CONFLICT (user_id, role_id) DO NOTHING;
+
 -- +goose Down
 WITH deleted_movements AS (
     DELETE FROM stock_movements WHERE note = 'Demo opening stock'
@@ -107,3 +134,7 @@ DELETE FROM products WHERE sku IN ('DRINK-ESP', 'DRINK-CAP', 'DRINK-TEA', 'FOOD-
 DELETE FROM suppliers WHERE name = 'House Roaster';
 DELETE FROM categories WHERE name IN ('Coffee', 'Tea', 'Pastries');
 DELETE FROM shop_settings WHERE id = 1 AND name = 'Coffee Shop';
+DELETE FROM users WHERE email IN (
+    'owner@coffee.local', 'manager@coffee.local', 'cashier@coffee.local',
+    'barista@coffee.local', 'customer@coffee.local'
+);
