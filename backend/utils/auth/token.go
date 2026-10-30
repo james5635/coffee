@@ -36,7 +36,14 @@ type accessClaims struct {
 // SignAccessToken signs an HS256 access JWT with sub, iat, exp, iss, aud,
 // roles and permissions claims. The token expires after 15 minutes.
 func SignAccessToken(secret, issuer, audience string, userID int64, roles, permissions []string) (string, error) {
-	return signAccessToken(secret, issuer, audience, userID, roles, permissions, accessTokenTTL)
+	return SignAccessTokenWithTTL(secret, issuer, audience, userID, roles, permissions, accessTokenTTL)
+}
+
+// SignAccessTokenWithTTL signs an access JWT with the given TTL.
+// The TTL seam is exposed so callers (e.g. service-layer tests) can mint
+// expired tokens without touching the clock.
+func SignAccessTokenWithTTL(secret, issuer, audience string, userID int64, roles, permissions []string, ttl time.Duration) (string, error) {
+	return signAccessToken(secret, issuer, audience, userID, roles, permissions, ttl)
 }
 
 // signAccessToken builds and signs an access JWT with the given TTL.

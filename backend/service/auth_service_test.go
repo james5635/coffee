@@ -288,7 +288,7 @@ func TestAuthenticateVerifiesAccessTokenAndLoadsPrincipal(t *testing.T) {
 	}
 }
 
-func TestAuthenticateRejectsExpiredAndInvalidTokens(t *testing.T) {
+func TestAuthenticateRejectsInvalidTokens(t *testing.T) {
 	repo := newFakeAuthRepository()
 	svc := newAuthService(t, repo)
 
@@ -297,5 +297,19 @@ func TestAuthenticateRejectsExpiredAndInvalidTokens(t *testing.T) {
 	}
 	if _, err := svc.Authenticate(context.Background(), "wrong.wrong.wrong"); !errors.Is(err, ErrUnauthenticated) {
 		t.Fatalf("Authenticate bad signature: expected %v, got %v", ErrUnauthenticated, err)
+	}
+}
+
+func TestAuthenticateRejectsExpiredToken(t *testing.T) {
+	repo := newFakeAuthRepository()
+	svc := newAuthService(t, repo)
+
+	expiredToken, err := auth.SignAccessTokenWithTTL("test-secret", "coffee-test", "coffee-test", 1, nil, nil, -time.Second)
+	if err != nil {
+		t.Fatalf("SignAccessTokenWithTTL: %v", err)
+	}
+
+	if _, err := svc.Authenticate(context.Background(), expiredToken); !errors.Is(err, ErrTokenExpired) {
+		t.Fatalf("Authenticate expired token: expected %v, got %v", ErrTokenExpired, err)
 	}
 }

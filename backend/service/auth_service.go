@@ -64,28 +64,7 @@ func (s *authService) Login(ctx context.Context, email, password string) (TokenP
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return TokenPair{}, ErrUnauthenticated
 	}
-	roleNames, permissionCodes, err := s.loadRoleNamesAndPermissionCodes(ctx, user.ID)
-	if err != nil {
-		return TokenPair{}, err
-	}
-	accessToken, err := auth.SignAccessToken(s.secret, s.issuer, s.audience, user.ID, roleNames, permissionCodes)
-	if err != nil {
-		return TokenPair{}, fmt.Errorf("sign access token: %w", err)
-	}
-	rawToken, err := auth.GenerateRefreshToken()
-	if err != nil {
-		return TokenPair{}, fmt.Errorf("generate refresh token: %w", err)
-	}
-	tokenHash := auth.HashRefreshToken(rawToken)
-	expiresAt := time.Now().Add(refreshTokenTTL)
-	if _, err := s.repository.InsertRefreshToken(ctx, tokenHash, user.ID, expiresAt); err != nil {
-		return TokenPair{}, fmt.Errorf("insert refresh token: %w", err)
-	}
-	return TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: rawToken,
-		ExpiresIn:    accessTokenExpiresIn,
-	}, nil
+	return s.issueTokenPair(ctx, user)
 }
 
 func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPair, error) {
@@ -96,44 +75,20 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 	if err := s.repository.RevokeRefreshToken(ctx, token.ID); err != nil {
 		return TokenPair{}, fmt.Errorf("revoke refresh token: %w", err)
 	}
-	user, err := s.repository.GetUserByID(ctx, token.UserID)
-	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return TokenPair{}, ErrUnauthenticated
-		}
-		return TokenPair{}, fmt.Errorf("get user: %w", err)
-	}
-	if !user.IsActive {
-		return TokenPair{}, ErrUnauthenticated
-	}
-	roleNames, permissionCodes, err := s.loadRoleNamesAndPermissionCodes(ctx, user.ID)
+	user, err := s.loadActiveUser(ctx, token.UserID)
 	if err != nil {
 		return TokenPair{}, err
 	}
-	accessToken, err := auth.SignAccessToken(s.secret, s.issuer, s.audience, user.ID, roleNames, permissionCodes)
-	if err != nil {
-		return TokenPair{}, fmt.Errorf("sign access token: %w", err)
-	}
-	rawToken, err := auth.GenerateRefreshToken()
-	if err != nil {
-		return TokenPair{}, fmt.Errorf("generate refresh token: %w", err)
-	}
-	tokenHash := auth.HashRefreshToken(rawToken)
-	expiresAt := time.Now().Add(refreshTokenTTL)
-	if _, err := s.repository.InsertRefreshToken(ctx, tokenHash, user.ID, expiresAt); err != nil {
-		return TokenPair{}, fmt.Errorf("insert refresh token: %w", err)
-	}
-	return TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: rawToken,
-		ExpiresIn:    accessTokenExpiresIn,
-	}, nil
+	return s.issueTokenPair(ctx, user)
 }
 
 func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	token, err := s.findRefreshToken(ctx, refreshToken)
 	if err != nil {
-		return nil // unknown token: logout is idempotent
+		if errors.Is(err, ErrInvalidRefreshToken) {
+			return nil // unknown/revoked/expired token: logout is idempotent
+		}
+		return err // surface infrastructure failures (e.g. GetRefreshTokenByHash)
 	}
 	return s.repository.RevokeRefreshToken(ctx, token.ID)
 }
@@ -146,21 +101,60 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (aut
 		}
 		return auth.Principal{}, ErrUnauthenticated
 	}
-	user, err := s.repository.GetUserByID(ctx, userID)
+	user, err := s.loadActiveUser(ctx, userID)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return auth.Principal{}, ErrUnauthenticated
-		}
-		return auth.Principal{}, fmt.Errorf("get user: %w", err)
-	}
-	if !user.IsActive {
-		return auth.Principal{}, ErrUnauthenticated
+		return auth.Principal{}, err
 	}
 	roleNames, permissionCodes, err := s.loadRoleNamesAndPermissionCodes(ctx, user.ID)
 	if err != nil {
 		return auth.Principal{}, err
 	}
 	return auth.NewPrincipal(user.ID, roleNames, permissionCodes), nil
+}
+
+// issueTokenPair issues a fresh access token and a rotated refresh token for
+// the user, persists the hashed refresh token, and returns the pair. It is
+// the single place where token-issuance logic lives (sign, generate, hash,
+// insert, build TokenPair) so a change to issuance is made in one place.
+func (s *authService) issueTokenPair(ctx context.Context, user repository.User) (TokenPair, error) {
+	roleNames, permissionCodes, err := s.loadRoleNamesAndPermissionCodes(ctx, user.ID)
+	if err != nil {
+		return TokenPair{}, err
+	}
+	accessToken, err := auth.SignAccessToken(s.secret, s.issuer, s.audience, user.ID, roleNames, permissionCodes)
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("sign access token: %w", err)
+	}
+	rawToken, err := auth.GenerateRefreshToken()
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("generate refresh token: %w", err)
+	}
+	tokenHash := auth.HashRefreshToken(rawToken)
+	expiresAt := time.Now().Add(refreshTokenTTL)
+	if _, err := s.repository.InsertRefreshToken(ctx, tokenHash, user.ID, expiresAt); err != nil {
+		return TokenPair{}, fmt.Errorf("insert refresh token: %w", err)
+	}
+	return TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: rawToken,
+		ExpiresIn:    accessTokenExpiresIn,
+	}, nil
+}
+
+// loadActiveUser loads the user by ID and fails closed with
+// ErrUnauthenticated when the user is missing or inactive.
+func (s *authService) loadActiveUser(ctx context.Context, userID int64) (repository.User, error) {
+	user, err := s.repository.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return repository.User{}, ErrUnauthenticated
+		}
+		return repository.User{}, fmt.Errorf("get user: %w", err)
+	}
+	if !user.IsActive {
+		return repository.User{}, ErrUnauthenticated
+	}
+	return user, nil
 }
 
 // findRefreshToken looks up a raw refresh token by its hash and rejects

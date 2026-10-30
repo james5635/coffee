@@ -44,7 +44,7 @@ func TestVerifyAccessTokenRejectsWrongSecret(t *testing.T) {
 }
 
 func TestVerifyAccessTokenRejectsExpiredToken(t *testing.T) {
-	token, err := signAccessToken("secret", "issuer", "audience", 9, nil, nil, -time.Second)
+	token, err := SignAccessTokenWithTTL("secret", "issuer", "audience", 9, nil, nil, -time.Second)
 	if err != nil {
 		t.Fatalf("signAccessToken: %v", err)
 	}
