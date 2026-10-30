@@ -112,8 +112,18 @@ func bearerMiddleware(authService service.AuthService, logger *slog.Logger) gin.
 
 		principal, err := authService.Authenticate(ctx, token)
 		if err != nil {
-			logger.WarnContext(ctx, "bearer authentication failed", "error", err)
-			c.AbortWithStatus(http.StatusUnauthorized)
+			if errors.Is(err, service.ErrTokenExpired) || errors.Is(err, service.ErrUnauthenticated) {
+				// Expired or invalid bearer token: 401, which clients treat as
+				// "log out / discard tokens". This is the only case where a bad
+				// token should clear client-side state.
+				logger.WarnContext(ctx, "bearer authentication failed", "error", err)
+				c.AbortWithStatus(http.StatusUnauthorized)
+				return
+			}
+			// Infrastructure failures (e.g. a wrapped "get user: ..." error)
+			// must not be surfaced as 401; log and return 500 instead.
+			logger.ErrorContext(ctx, "bearer authentication failed", "error", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 		ctx = auth.WithPrincipal(ctx, principal)
@@ -232,10 +242,6 @@ func refreshCookieAction(body []byte) (string, string) {
 	return "", "none"
 }
 
-// refreshTokenMaxAge is the refresh-token cookie lifetime, matching the
-// service-layer refresh token TTL (30 days).
-const refreshTokenMaxAge = 30 * 24 * 60 * 60 // seconds
-
 func refreshTokenCookieSecure() bool {
 	return gin.Mode() == gin.ReleaseMode
 }
@@ -245,7 +251,7 @@ func setRefreshTokenCookie(c *gin.Context, token string) {
 		Name:     "refresh_token",
 		Value:    token,
 		Path:     "/",
-		MaxAge:   refreshTokenMaxAge,
+		MaxAge:   int(service.RefreshTokenTTL.Seconds()),
 		HttpOnly: true,
 		Secure:   refreshTokenCookieSecure(),
 		SameSite: http.SameSiteLaxMode,

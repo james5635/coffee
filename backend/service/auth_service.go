@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	// refreshTokenTTL is the long-lived lifetime of a persisted refresh token.
-	refreshTokenTTL = 30 * 24 * time.Hour
+	// RefreshTokenTTL is the long-lived lifetime of a persisted refresh token.
+	// Exported so consumers (e.g. the HTTP cookie layer) can derive the cookie
+	// Max-Age from a single source of truth instead of a second hardcoded value.
+	RefreshTokenTTL = 30 * 24 * time.Hour
 	// accessTokenExpiresIn is the access token lifetime in seconds (15 minutes),
 	// matching auth.AccessTokenTTL in the token helpers.
 	accessTokenExpiresIn = 15 * 60
@@ -130,7 +132,7 @@ func (s *authService) issueTokenPair(ctx context.Context, user repository.User) 
 		return TokenPair{}, fmt.Errorf("generate refresh token: %w", err)
 	}
 	tokenHash := auth.HashRefreshToken(rawToken)
-	expiresAt := time.Now().Add(refreshTokenTTL)
+	expiresAt := time.Now().Add(RefreshTokenTTL)
 	if _, err := s.repository.InsertRefreshToken(ctx, tokenHash, user.ID, expiresAt); err != nil {
 		return TokenPair{}, fmt.Errorf("insert refresh token: %w", err)
 	}

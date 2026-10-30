@@ -5,10 +5,12 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/james5635/coffee/backend/graph"
 	"github.com/james5635/coffee/backend/service"
 	"github.com/james5635/coffee/backend/utils/auth"
 	"log/slog"
@@ -195,8 +197,9 @@ func TestSetRefreshTokenCookieAttributes(t *testing.T) {
 	if found.SameSite != http.SameSiteLaxMode {
 		t.Errorf("SameSite = %d, want %d (Lax)", found.SameSite, http.SameSiteLaxMode)
 	}
-	if found.MaxAge != refreshTokenMaxAge {
-		t.Errorf("MaxAge = %d, want %d", found.MaxAge, refreshTokenMaxAge)
+	wantMaxAge := int(service.RefreshTokenTTL.Seconds())
+	if found.MaxAge != wantMaxAge {
+		t.Errorf("MaxAge = %d, want %d", found.MaxAge, wantMaxAge)
 	}
 	if strings.Contains(w.Header().Get("Set-Cookie"), "Secure") {
 		t.Errorf("expected Secure=false in non-release mode")
@@ -266,5 +269,92 @@ func TestRefreshCookieActionNullPayloadNone(t *testing.T) {
 	_, action := refreshCookieAction([]byte(body))
 	if action != "none" {
 		t.Errorf("got %q, want %q", action, "none")
+	}
+}
+
+func graphqlHandlerBody(t *testing.T, w *httptest.ResponseRecorder) []byte {
+	t.Helper()
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read graphql response body: %v", err)
+	}
+	return body
+}
+
+func TestGraphQLHandlerLoginSetsRefreshCookie(t *testing.T) {
+	svc := &stubAuthService{
+		loginPair: service.TokenPair{
+			AccessToken:  "access-token",
+			RefreshToken: "rt-123",
+			ExpiresIn:    900,
+		},
+	}
+	resolvers := &graph.Resolver{Auth: svc}
+	h := graphqlHandler(resolvers, testLogger())
+
+	body := `{"query":"mutation { login(email: \"alice@example.com\", password: \"password\") { accessToken refreshToken tokenType expiresIn } }"}`
+	req := httptest.NewRequest("POST", "/query", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	h(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	respBody := graphqlHandlerBody(t, w)
+	if !strings.Contains(string(respBody), `"refreshToken":"rt-123"`) {
+		t.Errorf("body = %s, want refreshToken rt-123", respBody)
+	}
+	setCookie := w.Header().Get("Set-Cookie")
+	if !strings.Contains(setCookie, "refresh_token=rt-123") {
+		t.Errorf("Set-Cookie = %q, want refresh_token=rt-123", setCookie)
+	}
+	if !strings.Contains(setCookie, "HttpOnly") {
+		t.Errorf("expected HttpOnly in Set-Cookie: %q", setCookie)
+	}
+	if !strings.Contains(setCookie, "Path=/") {
+		t.Errorf("expected Path=/ in Set-Cookie: %q", setCookie)
+	}
+	if !strings.Contains(setCookie, "SameSite=Lax") {
+		t.Errorf("expected SameSite=Lax in Set-Cookie: %q", setCookie)
+	}
+	wantMaxAge := strconv.Itoa(int(service.RefreshTokenTTL.Seconds()))
+	if !strings.Contains(setCookie, "Max-Age="+wantMaxAge) {
+		t.Errorf("expected Max-Age=%s in Set-Cookie: %q", wantMaxAge, setCookie)
+	}
+	if strings.Contains(setCookie, "Secure") {
+		t.Errorf("expected Secure=false in non-release mode: %q", setCookie)
+	}
+}
+
+func TestGraphQLHandlerLogoutClearsRefreshCookie(t *testing.T) {
+	svc := &stubAuthService{}
+	resolvers := &graph.Resolver{Auth: svc}
+	h := graphqlHandler(resolvers, testLogger())
+
+	body := `{"query":"mutation { logout }"}`
+	req := httptest.NewRequest("POST", "/query", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+
+	h(c)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	respBody := graphqlHandlerBody(t, w)
+	if !strings.Contains(string(respBody), `"logout":true`) {
+		t.Errorf("body = %s, want logout true", respBody)
+	}
+	setCookie := w.Header().Get("Set-Cookie")
+	if !strings.Contains(setCookie, "refresh_token=") {
+		t.Errorf("Set-Cookie = %q, want refresh_token cleared", setCookie)
 	}
 }
