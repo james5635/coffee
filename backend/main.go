@@ -87,11 +87,14 @@ func main() {
 
 // bearerMiddleware authenticates bearer access tokens and populates the request
 // context. A valid bearer token resolves a principal (protected operations can
-// then succeed); an expired or invalid bearer token short-circuits with 401. No
-// bearer token leaves the context anonymous, so public operations keep working
-// while protected operations fail closed in the service layer. The refresh
-// token (if present as a cookie) is stored in the context for the
-// refreshToken/logout resolvers.
+// then succeed); an expired or invalid bearer token short-circuits with 401 *unless*
+// a refresh_token cookie is present, in which case the request proceeds
+// anonymously so the refreshToken/logout resolvers can run the recovery path
+// (expired access → 401 → client exchanges refresh token, or logout with an
+// expired access token). No bearer token leaves the context anonymous, so public
+// operations keep working while protected operations fail closed in the service
+// layer. The refresh token (if present as a cookie) is stored in the context for
+// the refreshToken/logout resolvers.
 func bearerMiddleware(authService service.AuthService, logger *slog.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
@@ -113,6 +116,16 @@ func bearerMiddleware(authService service.AuthService, logger *slog.Logger) gin.
 		principal, err := authService.Authenticate(ctx, token)
 		if err != nil {
 			if errors.Is(err, service.ErrTokenExpired) || errors.Is(err, service.ErrUnauthenticated) {
+				// If a refresh token cookie is present, proceed anonymously so the
+				// refreshToken/logout resolvers can run (refresh-after-expiry and
+				// logout recovery). The principal stays unset, so protected
+				// operations still fail closed. Without a refresh cookie, keep the
+				// existing 401 behavior.
+				if _, cookieErr := c.Cookie("refresh_token"); cookieErr == nil {
+					c.Request = c.Request.WithContext(ctx)
+					c.Next()
+					return
+				}
 				// Expired or invalid bearer token: 401, which clients treat as
 				// "log out / discard tokens". This is the only case where a bad
 				// token should clear client-side state.

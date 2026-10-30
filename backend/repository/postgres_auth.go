@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	db "github.com/james5635/coffee/backend/db"
@@ -88,6 +89,34 @@ func (p *Postgres) GetRefreshTokenByHash(ctx context.Context, tokenHash string) 
 // It is idempotent: revoking an already-revoked token is a no-op.
 func (p *Postgres) RevokeRefreshToken(ctx context.Context, tokenID int64) error {
 	return p.queries.RevokeRefreshToken(ctx, tokenID)
+}
+
+// RotateRefreshToken revokes the refresh token with the given ID and inserts a
+// new refresh token for the user in a single transaction. If either operation
+// fails the transaction is rolled back, so a user is never left with a revoked
+// token and no replacement.
+func (p *Postgres) RotateRefreshToken(ctx context.Context, tokenID int64, tokenHash string, userID int64, expiresAt time.Time) (RefreshToken, error) {
+	tx, err := p.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return RefreshToken{}, fmt.Errorf("begin rotation transaction: %w", err)
+	}
+	defer tx.Rollback()
+	qtx := p.queries.WithTx(tx)
+	if err := qtx.RevokeRefreshToken(ctx, tokenID); err != nil {
+		return RefreshToken{}, fmt.Errorf("revoke refresh token: %w", err)
+	}
+	row, err := qtx.InsertRefreshToken(ctx, db.InsertRefreshTokenParams{
+		UserID:    userID,
+		TokenHash: tokenHash,
+		ExpiresAt: expiresAt,
+	})
+	if err != nil {
+		return RefreshToken{}, fmt.Errorf("insert refresh token: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return RefreshToken{}, fmt.Errorf("commit rotation transaction: %w", err)
+	}
+	return mapRefreshToken(row), nil
 }
 
 func mapUser(row db.User) User {

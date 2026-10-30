@@ -358,3 +358,132 @@ func TestGraphQLHandlerLogoutClearsRefreshCookie(t *testing.T) {
 		t.Errorf("Set-Cookie = %q, want refresh_token cleared", setCookie)
 	}
 }
+
+// testAuthRouter builds a gin engine wiring bearerMiddleware ahead of the
+// graphqlHandler, mirroring the production route in main.go.
+func testAuthRouter(authSvc service.AuthService, resolvers *graph.Resolver) *gin.Engine {
+	router := gin.New()
+	router.POST("/query", bearerMiddleware(authSvc, testLogger()), graphqlHandler(resolvers, testLogger()))
+	return router
+}
+
+// TestBearerMiddlewareExpiredWithRefreshCookieProceedsAnonymously verifies C1:
+// an expired bearer token with a refresh_token cookie present must NOT short
+// circuit to 401. The request proceeds anonymously so the refreshToken/logout
+// resolvers can run, and the refresh token stays in context.
+func TestBearerMiddlewareExpiredWithRefreshCookieProceedsAnonymously(t *testing.T) {
+	svc := &stubAuthService{authenticateErr: service.ErrTokenExpired}
+	mw := bearerMiddleware(svc, testLogger())
+	req := httptest.NewRequest("POST", "/query", nil)
+	req.Header.Set("Authorization", "Bearer expired.access.token")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: "rt-123"})
+	c := newTestContext(req)
+
+	mw(c)
+
+	if c.IsAborted() {
+		t.Errorf("middleware aborted for an expired token with a refresh cookie")
+	}
+	if c.Writer.Status() == http.StatusUnauthorized {
+		t.Errorf("status = %d, expected not 401 (request proceeded anonymously)", c.Writer.Status())
+	}
+	if _, ok := auth.PrincipalFromContext(c.Request.Context()); ok {
+		t.Errorf("expected anonymous principal (no user) for expired token")
+	}
+	got, ok := auth.RefreshTokenFromContext(c.Request.Context())
+	if !ok {
+		t.Fatalf("expected refresh token in context from cookie")
+	}
+	if got != "rt-123" {
+		t.Errorf("refresh token = %q, want %q", got, "rt-123")
+	}
+}
+
+// TestBearerMiddlewareExpiredNoRefreshCookieAborts401 verifies C1: an expired
+// bearer token without a refresh cookie still short-circuits with 401.
+func TestBearerMiddlewareExpiredNoRefreshCookieAborts401(t *testing.T) {
+	svc := &stubAuthService{authenticateErr: service.ErrTokenExpired}
+	mw := bearerMiddleware(svc, testLogger())
+	req := httptest.NewRequest("POST", "/query", nil)
+	req.Header.Set("Authorization", "Bearer expired.access.token")
+	c := newTestContext(req)
+
+	mw(c)
+
+	if !c.IsAborted() {
+		t.Errorf("expected middleware to abort for an expired token without a refresh cookie")
+	}
+	if c.Writer.Status() != http.StatusUnauthorized {
+		t.Errorf("status = %d, want %d", c.Writer.Status(), http.StatusUnauthorized)
+	}
+}
+
+// TestGraphQLHandlerExpiredBearerWithRefreshCookieRefreshProceeds verifies C1
+// end to end: an expired bearer token with a refresh cookie lets the refresh
+// resolver run and rotate the token instead of returning 401.
+func TestGraphQLHandlerExpiredBearerWithRefreshCookieRefreshProceeds(t *testing.T) {
+	svc := &stubAuthService{
+		authenticateErr: service.ErrTokenExpired,
+		refreshPair: service.TokenPair{
+			AccessToken:  "new-access",
+			RefreshToken: "new-rt",
+			ExpiresIn:    900,
+		},
+	}
+	resolvers := &graph.Resolver{Auth: svc}
+	router := testAuthRouter(svc, resolvers)
+
+	body := `{"query":"mutation { refreshToken { accessToken refreshToken tokenType expiresIn } }"}`
+	req := httptest.NewRequest("POST", "/query", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer expired.access.token")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: "rt-123"})
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	respBody := graphqlHandlerBody(t, w)
+	if !strings.Contains(string(respBody), `"refreshToken":"new-rt"`) {
+		t.Errorf("body = %s, want rotated refresh token", respBody)
+	}
+	setCookie := w.Header().Get("Set-Cookie")
+	if !strings.Contains(setCookie, "refresh_token=new-rt") {
+		t.Errorf("Set-Cookie = %q, want refresh_token=new-rt", setCookie)
+	}
+}
+
+// TestGraphQLHandlerExpiredBearerWithRefreshCookieLogoutClearsCookie verifies
+// C1 end to end: logout is reachable with an expired bearer token when a
+// refresh cookie is present, and the refresh cookie is cleared.
+func TestGraphQLHandlerExpiredBearerWithRefreshCookieLogoutClearsCookie(t *testing.T) {
+	svc := &stubAuthService{
+		authenticateErr: service.ErrTokenExpired,
+	}
+	resolvers := &graph.Resolver{Auth: svc}
+	router := testAuthRouter(svc, resolvers)
+
+	body := `{"query":"mutation { logout }"}`
+	req := httptest.NewRequest("POST", "/query", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer expired.access.token")
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: "rt-123"})
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+	}
+	respBody := graphqlHandlerBody(t, w)
+	if !strings.Contains(string(respBody), `"logout":true`) {
+		t.Errorf("body = %s, want logout true", respBody)
+	}
+	setCookie := w.Header().Get("Set-Cookie")
+	if !strings.Contains(setCookie, "refresh_token=") {
+		t.Errorf("Set-Cookie = %q, want refresh_token cleared", setCookie)
+	}
+	if !strings.Contains(setCookie, "Max-Age=-1") && !strings.Contains(setCookie, "Max-Age=0") {
+		t.Errorf("expected cookie cleared (Max-Age=-1) in Set-Cookie: %q", setCookie)
+	}
+}

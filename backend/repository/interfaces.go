@@ -57,4 +57,9 @@ type AuthRepository interface {
 	InsertRefreshToken(context.Context, string, int64, time.Time) (RefreshToken, error)
 	GetRefreshTokenByHash(context.Context, string) (RefreshToken, error)
 	RevokeRefreshToken(context.Context, int64) error
+	// RotateRefreshToken revokes the refresh token with the given ID and inserts
+	// a new refresh token for the user in a single transaction. If either
+	// operation fails the transaction is rolled back, so a user is never left
+	// with a revoked token and no replacement.
+	RotateRefreshToken(context.Context, int64, string, int64, time.Time) (RefreshToken, error)
 }

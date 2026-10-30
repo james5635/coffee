@@ -134,6 +134,31 @@ func (f *fakeAuthRepository) RevokeRefreshToken(ctx context.Context, tokenID int
 	return nil
 }
 
+func (f *fakeAuthRepository) RotateRefreshToken(ctx context.Context, tokenID int64, tokenHash string, userID int64, expiresAt time.Time) (repository.RefreshToken, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	// Revoke the presented token.
+	for _, token := range f.tokens {
+		if token.ID == tokenID {
+			now := time.Now()
+			token.RevokedAt = &now
+			f.tokens[token.TokenHash] = token
+			break
+		}
+	}
+	// Insert the rotated token.
+	f.nextID++
+	token := repository.RefreshToken{
+		ID:        f.nextID,
+		UserID:    userID,
+		TokenHash: tokenHash,
+		ExpiresAt: expiresAt,
+		CreatedAt: time.Now(),
+	}
+	f.tokens[tokenHash] = token
+	return token, nil
+}
+
 func newAuthService(t *testing.T, repo repository.AuthRepository) *authService {
 	t.Helper()
 	return &authService{repository: repo, secret: "test-secret", issuer: "coffee-test", audience: "coffee-test"}

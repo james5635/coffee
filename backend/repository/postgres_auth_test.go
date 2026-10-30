@@ -218,3 +218,57 @@ func TestAuthRepositoryIntegration(t *testing.T) {
 		t.Fatalf("second RevokeRefreshToken: %v", err)
 	}
 }
+
+// TestRotateRefreshTokenIntegration verifies RotateRefreshToken revokes the
+// presented token and inserts the rotated token atomically against a live
+// database. It is skipped when no database is available.
+func TestRotateRefreshTokenIntegration(t *testing.T) {
+	ctx := context.Background()
+	p := authIntegrationDB(t)
+
+	email := fmt.Sprintf("alice.rotate.%d@example.com", time.Now().UnixNano())
+	user, err := p.queries.CreateUser(ctx, db.CreateUserParams{
+		Email:        email,
+		PasswordHash: "$2a$10$integrationtestdummyhash",
+		DisplayName:  "Alice Rotate",
+	})
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = p.conn.ExecContext(ctx, "DELETE FROM refresh_tokens WHERE user_id = $1", user.ID)
+		_, _ = p.conn.ExecContext(ctx, "DELETE FROM users WHERE id = $1", user.ID)
+	})
+
+	// Seed an existing refresh token.
+	oldHash := fmt.Sprintf("old-hash-%d", time.Now().UnixNano())
+	oldToken, err := p.InsertRefreshToken(ctx, oldHash, user.ID, time.Now().Add(24*time.Hour))
+	if err != nil {
+		t.Fatalf("InsertRefreshToken: %v", err)
+	}
+
+	// Rotate: revoke old + insert new in a single transaction.
+	newHash := fmt.Sprintf("new-hash-%d", time.Now().UnixNano())
+	rotated, err := p.RotateRefreshToken(ctx, oldToken.ID, newHash, user.ID, time.Now().Add(30*24*time.Hour))
+	if err != nil {
+		t.Fatalf("RotateRefreshToken: %v", err)
+	}
+
+	// Old token is revoked.
+	gotOld, err := p.GetRefreshTokenByHash(ctx, oldHash)
+	if err != nil {
+		t.Fatalf("GetRefreshTokenByHash old: %v", err)
+	}
+	if gotOld.RevokedAt == nil {
+		t.Fatal("expected old token to be revoked after RotateRefreshToken")
+	}
+
+	// New token exists, is not revoked, and belongs to the user.
+	gotNew, err := p.GetRefreshTokenByHash(ctx, newHash)
+	if err != nil {
+		t.Fatalf("GetRefreshTokenByHash new: %v", err)
+	}
+	if gotNew.ID != rotated.ID || gotNew.RevokedAt != nil || gotNew.UserID != user.ID {
+		t.Fatalf("expected rotated token present and not revoked: %+v", gotNew)
+	}
+}

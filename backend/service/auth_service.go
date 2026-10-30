@@ -74,14 +74,35 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 	if err != nil {
 		return TokenPair{}, err
 	}
-	if err := s.repository.RevokeRefreshToken(ctx, token.ID); err != nil {
-		return TokenPair{}, fmt.Errorf("revoke refresh token: %w", err)
-	}
 	user, err := s.loadActiveUser(ctx, token.UserID)
 	if err != nil {
 		return TokenPair{}, err
 	}
-	return s.issueTokenPair(ctx, user)
+	roleNames, permissionCodes, err := s.loadRoleNamesAndPermissionCodes(ctx, user.ID)
+	if err != nil {
+		return TokenPair{}, err
+	}
+	accessToken, err := auth.SignAccessToken(s.secret, s.issuer, s.audience, user.ID, roleNames, permissionCodes)
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("sign access token: %w", err)
+	}
+	rawToken, err := auth.GenerateRefreshToken()
+	if err != nil {
+		return TokenPair{}, fmt.Errorf("generate refresh token: %w", err)
+	}
+	tokenHash := auth.HashRefreshToken(rawToken)
+	expiresAt := time.Now().Add(RefreshTokenTTL)
+	// Revoke the presented token and insert the rotated token atomically. If
+	// either operation fails the transaction rolls back, so the user is never
+	// left with a revoked token and no replacement.
+	if _, err := s.repository.RotateRefreshToken(ctx, token.ID, tokenHash, user.ID, expiresAt); err != nil {
+		return TokenPair{}, fmt.Errorf("rotate refresh token: %w", err)
+	}
+	return TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: rawToken,
+		ExpiresIn:    accessTokenExpiresIn,
+	}, nil
 }
 
 func (s *authService) Logout(ctx context.Context, refreshToken string) error {
