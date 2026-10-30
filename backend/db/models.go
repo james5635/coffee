@@ -139,6 +139,15 @@ type ProductRecipe struct {
 	Quantity        string
 }
 
+type RefreshToken struct {
+	ID        int64
+	UserID    int64
+	TokenHash string
+	ExpiresAt time.Time
+	RevokedAt sql.NullTime
+	CreatedAt time.Time
+}
+
 type Role struct {
 	ID          int64
 	Name        string
