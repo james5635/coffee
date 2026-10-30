@@ -191,3 +191,39 @@ type IssueRefundInput struct {
 	Amount            Money
 	ExternalReference *string
 }
+
+// User represents a registered system user used by the auth flow.
+type User struct {
+	ID           int64
+	Email        string
+	PasswordHash string
+	DisplayName  string
+	Phone        *string
+	IsActive     bool
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
+// Role represents a user role used to build the authenticated principal.
+type Role struct {
+	ID          int64
+	Name        string
+	Description string
+}
+
+// Permission represents an access permission granted to a role.
+type Permission struct {
+	ID          int64
+	Code        string
+	Description string
+}
+
+// RefreshToken represents a persisted opaque refresh token.
+type RefreshToken struct {
+	ID        int64
+	UserID    int64
+	TokenHash string
+	ExpiresAt time.Time
+	RevokedAt *time.Time
+	CreatedAt time.Time
+}

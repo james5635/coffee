@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 var (
@@ -44,4 +45,16 @@ type PaymentTx interface {
 	GetPaymentBalanceForUpdate(context.Context, int64) (PaymentBalance, error)
 	RecordSuccessfulPayment(context.Context, Payment) (Payment, error)
 	CreateRefund(context.Context, Payment) (Payment, error)
+}
+
+// AuthRepository is the repository-layer auth surface consumed by AuthService.
+// It maps generated sqlc query results into shared repository business types.
+type AuthRepository interface {
+	GetUserByEmail(context.Context, string) (User, error)
+	GetUserByID(context.Context, int64) (User, error)
+	ListUserRoles(context.Context, int64) ([]Role, error)
+	ListRolePermissions(context.Context, int64) ([]Permission, error)
+	InsertRefreshToken(context.Context, string, int64, time.Time) (RefreshToken, error)
+	GetRefreshTokenByHash(context.Context, string) (RefreshToken, error)
+	RevokeRefreshToken(context.Context, int64) error
 }
