@@ -11,4 +11,5 @@ type Resolver struct {
 	Menu     service.MenuService
 	Orders   service.OrderService
 	Payments service.PaymentService
+	Auth     service.AuthService
 }

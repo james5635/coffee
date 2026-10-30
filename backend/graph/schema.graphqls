@@ -147,6 +147,13 @@ input IssueRefundInput {
   externalReference: String
 }
 
+type AuthPayload {
+  accessToken: String!
+  refreshToken: String!
+  tokenType: String!
+  expiresIn: Int!
+}
+
 type Query {
   categories: [Category!]!
   products(categoryId: ID): [Product!]!
@@ -159,4 +166,7 @@ type Mutation {
   advanceOrderStatus(orderId: ID!, status: OrderStatus!): Order!
   recordPayment(input: RecordPaymentInput!): Payment!
   issueRefund(input: IssueRefundInput!): Payment!
+  login(email: String!, password: String!): AuthPayload!
+  refreshToken: AuthPayload!
+  logout: Boolean!
 }

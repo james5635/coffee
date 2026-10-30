@@ -12,6 +12,13 @@ import (
 	"github.com/james5635/coffee/backend/graph/scalar"
 )
 
+type AuthPayload struct {
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	TokenType    string `json:"tokenType"`
+	ExpiresIn    int32  `json:"expiresIn"`
+}
+
 type Category struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`

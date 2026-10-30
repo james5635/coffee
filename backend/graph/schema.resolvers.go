@@ -12,6 +12,7 @@ import (
 	"github.com/james5635/coffee/backend/graph/model"
 	"github.com/james5635/coffee/backend/repository"
 	"github.com/james5635/coffee/backend/service"
+	"github.com/james5635/coffee/backend/utils/auth"
 )
 
 // PlaceOrder is the resolver for the placeOrder field.
@@ -110,6 +111,48 @@ func (r *mutationResolver) IssueRefund(ctx context.Context, input model.IssueRef
 	}
 	result := graphPayment(payment)
 	return result, nil
+}
+
+// Login is the resolver for the login field.
+func (r *mutationResolver) Login(ctx context.Context, email string, password string) (*model.AuthPayload, error) {
+	pair, err := r.Auth.Login(ctx, email, password)
+	if err != nil {
+		return nil, err
+	}
+	return authPayload(pair), nil
+}
+
+// RefreshToken is the resolver for the refreshToken field. The refresh token is
+// taken from the request context (populated by the auth middleware from the
+// refresh-token cookie) rather than a GraphQL argument.
+func (r *mutationResolver) RefreshToken(ctx context.Context) (*model.AuthPayload, error) {
+	refreshToken, _ := auth.RefreshTokenFromContext(ctx)
+	pair, err := r.Auth.Refresh(ctx, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+	return authPayload(pair), nil
+}
+
+// Logout is the resolver for the logout field. The refresh token is taken from
+// the request context; logout is idempotent for unknown or already-revoked
+// tokens.
+func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
+	refreshToken, _ := auth.RefreshTokenFromContext(ctx)
+	if err := r.Auth.Logout(ctx, refreshToken); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// authPayload maps a service TokenPair to the GraphQL AuthPayload.
+func authPayload(pair service.TokenPair) *model.AuthPayload {
+	return &model.AuthPayload{
+		AccessToken:  pair.AccessToken,
+		RefreshToken: pair.RefreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int32(pair.ExpiresIn),
+	}
 }
 
 // Categories is the resolver for the categories field.
