@@ -3,8 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-
-	"github.com/james5635/coffee/backend/service/domain"
 )
 
 var (
@@ -13,28 +11,28 @@ var (
 )
 
 type MenuRepository interface {
-	ListCategories(context.Context) ([]domain.Category, error)
-	ListProducts(context.Context, *int64) ([]domain.Product, error)
-	GetSellableProduct(context.Context, int64) (domain.Product, error)
+	ListCategories(context.Context) ([]Category, error)
+	ListProducts(context.Context, *int64) ([]Product, error)
+	GetSellableProduct(context.Context, int64) (Product, error)
 }
 
 type OrderRepository interface {
-	GetOrder(context.Context, int64) (domain.Order, error)
-	GetCustomerByUserID(context.Context, int64) (domain.Customer, error)
-	ListPreparationQueue(context.Context) ([]domain.Order, error)
+	GetOrder(context.Context, int64) (Order, error)
+	GetCustomerByUserID(context.Context, int64) (Customer, error)
+	ListPreparationQueue(context.Context) ([]Order, error)
 	WithinOrderTx(context.Context, func(OrderTx) error) error
 }
 
 type OrderTx interface {
-	GetShopSettings(context.Context) (domain.ShopSettings, error)
-	GetCustomerByUserID(context.Context, int64) (domain.Customer, error)
-	GetOrCreateCustomer(context.Context, int64) (domain.Customer, error)
-	GetSellableProduct(context.Context, int64) (domain.Product, error)
-	CreateOrder(context.Context, domain.Order) (domain.Order, error)
-	AddOrderItem(context.Context, domain.OrderItem) (domain.OrderItem, error)
-	AddOrderItemModifier(context.Context, domain.OrderItemModifier) (domain.OrderItemModifier, error)
-	GetOrderForUpdate(context.Context, int64) (domain.Order, error)
-	SetOrderStatus(context.Context, int64, domain.OrderStatus, domain.OrderStatus) (domain.Order, error)
+	GetShopSettings(context.Context) (ShopSettings, error)
+	GetCustomerByUserID(context.Context, int64) (Customer, error)
+	GetOrCreateCustomer(context.Context, int64) (Customer, error)
+	GetSellableProduct(context.Context, int64) (Product, error)
+	CreateOrder(context.Context, Order) (Order, error)
+	AddOrderItem(context.Context, OrderItem) (OrderItem, error)
+	AddOrderItemModifier(context.Context, OrderItemModifier) (OrderItemModifier, error)
+	GetOrderForUpdate(context.Context, int64) (Order, error)
+	SetOrderStatus(context.Context, int64, OrderStatus, OrderStatus) (Order, error)
 }
 
 type PaymentRepository interface {
@@ -42,8 +40,8 @@ type PaymentRepository interface {
 }
 
 type PaymentTx interface {
-	GetOrderForUpdate(context.Context, int64) (domain.Order, error)
-	GetPaymentBalanceForUpdate(context.Context, int64) (domain.PaymentBalance, error)
-	RecordSuccessfulPayment(context.Context, domain.Payment) (domain.Payment, error)
-	CreateRefund(context.Context, domain.Payment) (domain.Payment, error)
+	GetOrderForUpdate(context.Context, int64) (Order, error)
+	GetPaymentBalanceForUpdate(context.Context, int64) (PaymentBalance, error)
+	RecordSuccessfulPayment(context.Context, Payment) (Payment, error)
+	CreateRefund(context.Context, Payment) (Payment, error)
 }

@@ -5,17 +5,16 @@ import (
 	"database/sql"
 
 	db "github.com/james5635/coffee/backend/db"
-	"github.com/james5635/coffee/backend/service/domain"
 )
 
-func (p *Postgres) ListCategories(ctx context.Context) ([]domain.Category, error) {
+func (p *Postgres) ListCategories(ctx context.Context) ([]Category, error) {
 	rows, err := p.queries.ListActiveCategories(ctx)
 	if err != nil {
 		return nil, err
 	}
-	categories := make([]domain.Category, 0, len(rows))
+	categories := make([]Category, 0, len(rows))
 	for _, row := range rows {
-		categories = append(categories, domain.Category{
+		categories = append(categories, Category{
 			ID: row.ID, Name: row.Name, Description: row.Description,
 			SortOrder: row.SortOrder, IsActive: row.IsActive, CreatedAt: row.CreatedAt,
 		})
@@ -23,21 +22,21 @@ func (p *Postgres) ListCategories(ctx context.Context) ([]domain.Category, error
 	return categories, nil
 }
 
-func (p *Postgres) ListProducts(ctx context.Context, categoryID *int64) ([]domain.Product, error) {
+func (p *Postgres) ListProducts(ctx context.Context, categoryID *int64) ([]Product, error) {
 	rows, err := p.queries.ListAvailableProducts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	products := make([]domain.Product, 0, len(rows))
+	products := make([]Product, 0, len(rows))
 	for _, row := range rows {
 		if categoryID != nil && (!row.CategoryID.Valid || row.CategoryID.Int64 != *categoryID) {
 			continue
 		}
-		price, err := domain.ParseMoney(row.Price)
+		price, err := ParseMoney(row.Price)
 		if err != nil {
 			return nil, err
 		}
-		products = append(products, domain.Product{
+		products = append(products, Product{
 			ID: row.ID, CategoryID: nullableInt64(row.CategoryID), Name: row.Name,
 			Description: row.Description, Price: price, SKU: nullableString(row.Sku),
 			IsAvailable: row.IsAvailable, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
@@ -51,58 +50,58 @@ func (p *Postgres) ListProducts(ctx context.Context, categoryID *int64) ([]domai
 	return products, nil
 }
 
-func (p *Postgres) GetSellableProduct(ctx context.Context, productID int64) (domain.Product, error) {
+func (p *Postgres) GetSellableProduct(ctx context.Context, productID int64) (Product, error) {
 	return sellableProduct(ctx, p.queries, productID)
 }
 
-func sellableProduct(ctx context.Context, queries *db.Queries, productID int64) (domain.Product, error) {
+func sellableProduct(ctx context.Context, queries *db.Queries, productID int64) (Product, error) {
 	row, err := queries.GetSellableProduct(ctx, productID)
 	if err != nil {
-		return domain.Product{}, mapQueryError(err)
+		return Product{}, mapQueryError(err)
 	}
-	price, err := domain.ParseMoney(row.Price)
+	price, err := ParseMoney(row.Price)
 	if err != nil {
-		return domain.Product{}, err
+		return Product{}, err
 	}
-	product := domain.Product{
+	product := Product{
 		ID: row.ID, CategoryID: nullableInt64(row.CategoryID), Name: row.Name,
 		Description: row.Description, Price: price, SKU: nullableString(row.Sku),
 		IsAvailable: row.IsAvailable, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 	}
 	product.Groups, err = loadModifierGroups(ctx, queries, productID)
 	if err != nil {
-		return domain.Product{}, err
+		return Product{}, err
 	}
 	return product, nil
 }
 
-func loadModifierGroups(ctx context.Context, queries *db.Queries, productID int64) ([]domain.ModifierGroup, error) {
+func loadModifierGroups(ctx context.Context, queries *db.Queries, productID int64) ([]ModifierGroup, error) {
 	groupRows, err := queries.ListProductModifierGroups(ctx, productID)
 	if err != nil {
 		return nil, err
 	}
-	groups := make([]domain.ModifierGroup, 0)
+	groups := make([]ModifierGroup, 0)
 	groupIndices := make(map[int64]int)
 	for _, groupRow := range groupRows {
 		index, exists := groupIndices[groupRow.GroupID]
 		if !exists {
 			index = len(groups)
 			groupIndices[groupRow.GroupID] = index
-			groups = append(groups, domain.ModifierGroup{
+			groups = append(groups, ModifierGroup{
 				ID: groupRow.GroupID, Name: groupRow.GroupName,
 				MinSelections: groupRow.MinSelections, MaxSelections: groupRow.MaxSelections,
 				IsRequired: groupRow.IsRequired, SortOrder: groupRow.ProductSortOrder,
-				Options: make([]domain.Modifier, 0),
+				Options: make([]Modifier, 0),
 			})
 		}
 		if !groupRow.ModifierID.Valid {
 			continue
 		}
-		priceDelta, err := domain.ParseMoney(groupRow.PriceDelta.String)
+		priceDelta, err := ParseMoney(groupRow.PriceDelta.String)
 		if err != nil {
 			return nil, err
 		}
-		groups[index].Options = append(groups[index].Options, domain.Modifier{
+		groups[index].Options = append(groups[index].Options, Modifier{
 			ID: groupRow.ModifierID.Int64, Name: groupRow.ModifierName.String,
 			PriceDelta: priceDelta, SortOrder: groupRow.SortOrder.Int32,
 		})

@@ -4,68 +4,67 @@ import (
 	"context"
 
 	db "github.com/james5635/coffee/backend/db"
-	"github.com/james5635/coffee/backend/service/domain"
 )
 
 type postgresPaymentTx struct{ queries *db.Queries }
 
-func (tx *postgresPaymentTx) GetOrderForUpdate(ctx context.Context, orderID int64) (domain.Order, error) {
+func (tx *postgresPaymentTx) GetOrderForUpdate(ctx context.Context, orderID int64) (Order, error) {
 	row, err := tx.queries.GetOrderForUpdate(ctx, orderID)
 	if err != nil {
-		return domain.Order{}, mapQueryError(err)
+		return Order{}, mapQueryError(err)
 	}
 	return orderFromDB(row)
 }
 
-func (tx *postgresPaymentTx) GetPaymentBalanceForUpdate(ctx context.Context, orderID int64) (domain.PaymentBalance, error) {
+func (tx *postgresPaymentTx) GetPaymentBalanceForUpdate(ctx context.Context, orderID int64) (PaymentBalance, error) {
 	row, err := tx.queries.GetOrderPaymentBalance(ctx, orderID)
 	if err != nil {
-		return domain.PaymentBalance{}, err
+		return PaymentBalance{}, err
 	}
-	paid, err := domain.ParseMoney(row.PaidTotal)
+	paid, err := ParseMoney(row.PaidTotal)
 	if err != nil {
-		return domain.PaymentBalance{}, err
+		return PaymentBalance{}, err
 	}
-	refunded, err := domain.ParseMoney(row.RefundedTotal)
+	refunded, err := ParseMoney(row.RefundedTotal)
 	if err != nil {
-		return domain.PaymentBalance{}, err
+		return PaymentBalance{}, err
 	}
-	return domain.PaymentBalance{Paid: paid, Refunded: refunded}, nil
+	return PaymentBalance{Paid: paid, Refunded: refunded}, nil
 }
 
-func (tx *postgresPaymentTx) RecordSuccessfulPayment(ctx context.Context, payment domain.Payment) (domain.Payment, error) {
+func (tx *postgresPaymentTx) RecordSuccessfulPayment(ctx context.Context, payment Payment) (Payment, error) {
 	row, err := tx.queries.RecordSuccessfulPayment(ctx, db.RecordSuccessfulPaymentParams{
 		OrderID: payment.OrderID, RecordedBy: nullInt64(payment.RecordedBy),
-		Method: string(payment.Method), Amount: domain.FormatMoney(payment.Amount),
+		Method: string(payment.Method), Amount: FormatMoney(payment.Amount),
 		ExternalReference: nullString(payment.ExternalReference),
 	})
 	if err != nil {
-		return domain.Payment{}, err
+		return Payment{}, err
 	}
 	return paymentFromDB(row)
 }
 
-func (tx *postgresPaymentTx) CreateRefund(ctx context.Context, payment domain.Payment) (domain.Payment, error) {
+func (tx *postgresPaymentTx) CreateRefund(ctx context.Context, payment Payment) (Payment, error) {
 	row, err := tx.queries.CreateRefund(ctx, db.CreateRefundParams{
 		OrderID: payment.OrderID, RecordedBy: nullInt64(payment.RecordedBy),
-		Method: string(payment.Method), Amount: domain.FormatMoney(payment.Amount),
+		Method: string(payment.Method), Amount: FormatMoney(payment.Amount),
 		ExternalReference: nullString(payment.ExternalReference),
 	})
 	if err != nil {
-		return domain.Payment{}, err
+		return Payment{}, err
 	}
 	return paymentFromDB(row)
 }
 
-func paymentFromDB(row db.Payment) (domain.Payment, error) {
-	amount, err := domain.ParseMoney(row.Amount)
+func paymentFromDB(row db.Payment) (Payment, error) {
+	amount, err := ParseMoney(row.Amount)
 	if err != nil {
-		return domain.Payment{}, err
+		return Payment{}, err
 	}
-	payment := domain.Payment{
+	payment := Payment{
 		ID: row.ID, OrderID: row.OrderID, RecordedBy: nullableInt64(row.RecordedBy),
-		Kind: domain.PaymentKind(row.Kind), Status: domain.PaymentStatus(row.Status),
-		Method: domain.PaymentMethod(row.Method), Amount: amount,
+		Kind: PaymentKind(row.Kind), Status: PaymentStatus(row.Status),
+		Method: PaymentMethod(row.Method), Amount: amount,
 		ExternalReference: nullableString(row.ExternalReference), CreatedAt: row.CreatedAt,
 	}
 	if row.SettledAt.Valid {

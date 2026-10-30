@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/james5635/coffee/backend/repository"
-	"github.com/james5635/coffee/backend/service/domain"
 	"github.com/james5635/coffee/backend/utils/auth"
 )
 
@@ -18,34 +17,34 @@ func NewOrderService(repository repository.OrderRepository) OrderService {
 }
 
 type pricedLine struct {
-	product   domain.Product
+	product   repository.Product
 	quantity  int32
-	lineTotal domain.Money
-	modifiers []domain.OrderItemModifier
+	lineTotal repository.Money
+	modifiers []repository.OrderItemModifier
 	note      string
 }
 
-func (s *orderService) PlaceOrder(ctx context.Context, input domain.PlaceOrderInput) (domain.Order, error) {
+func (s *orderService) PlaceOrder(ctx context.Context, input repository.PlaceOrderInput) (repository.Order, error) {
 	if len(input.Items) == 0 {
-		return domain.Order{}, fmt.Errorf("%w: order must contain at least one item", ErrInvalidInput)
+		return repository.Order{}, fmt.Errorf("%w: order must contain at least one item", ErrInvalidInput)
 	}
 	if !validOrderType(input.OrderType) {
-		return domain.Order{}, fmt.Errorf("%w: unsupported order type", ErrInvalidInput)
+		return repository.Order{}, fmt.Errorf("%w: unsupported order type", ErrInvalidInput)
 	}
 	principal, authenticated := auth.PrincipalFromContext(ctx)
 	if authenticated {
 		if err := requirePermission(principal, "order.create"); err != nil {
-			return domain.Order{}, err
+			return repository.Order{}, err
 		}
 	}
 
-	var created domain.Order
+	var created repository.Order
 	err := s.repository.WithinOrderTx(ctx, func(tx repository.OrderTx) error {
 		settings, err := tx.GetShopSettings(ctx)
 		if err != nil {
 			return fmt.Errorf("get shop settings: %w", err)
 		}
-		var customer *domain.Customer
+		var customer *repository.Customer
 		if authenticated && principal.HasRole("customer") {
 			resolved, err := tx.GetOrCreateCustomer(ctx, principal.UserID)
 			if err != nil {
@@ -55,7 +54,7 @@ func (s *orderService) PlaceOrder(ctx context.Context, input domain.PlaceOrderIn
 		}
 
 		lines := make([]pricedLine, 0, len(input.Items))
-		var subtotal domain.Money
+		var subtotal repository.Money
 		for _, lineInput := range input.Items {
 			if lineInput.Quantity <= 0 {
 				return fmt.Errorf("%w: item quantity must be positive", ErrInvalidInput)
@@ -97,7 +96,7 @@ func (s *orderService) PlaceOrder(ctx context.Context, input domain.PlaceOrderIn
 		if err != nil {
 			return err
 		}
-		order := domain.Order{
+		order := repository.Order{
 			Type: input.OrderType, Notes: strings.TrimSpace(input.Notes),
 			Subtotal: subtotal, TaxAmount: tax, Total: total, Currency: settings.Currency,
 		}
@@ -116,10 +115,10 @@ func (s *orderService) PlaceOrder(ctx context.Context, input domain.PlaceOrderIn
 		if err != nil {
 			return fmt.Errorf("create order: %w", err)
 		}
-		created.Items = make([]domain.OrderItem, 0, len(lines))
-		created.Payments = make([]domain.Payment, 0)
+		created.Items = make([]repository.OrderItem, 0, len(lines))
+		created.Payments = make([]repository.Payment, 0)
 		for _, line := range lines {
-			item, err := tx.AddOrderItem(ctx, domain.OrderItem{
+			item, err := tx.AddOrderItem(ctx, repository.OrderItem{
 				OrderID: created.ID, ProductID: int64Pointer(line.product.ID),
 				ProductName: line.product.Name, Quantity: line.quantity,
 				UnitPrice: line.product.Price, LineTotal: line.lineTotal,
@@ -128,7 +127,7 @@ func (s *orderService) PlaceOrder(ctx context.Context, input domain.PlaceOrderIn
 			if err != nil {
 				return fmt.Errorf("create order item: %w", err)
 			}
-			item.Modifiers = make([]domain.OrderItemModifier, 0, len(line.modifiers))
+			item.Modifiers = make([]repository.OrderItemModifier, 0, len(line.modifiers))
 			for _, modifier := range line.modifiers {
 				modifier.OrderItemID = item.ID
 				saved, err := tx.AddOrderItemModifier(ctx, modifier)
@@ -142,19 +141,19 @@ func (s *orderService) PlaceOrder(ctx context.Context, input domain.PlaceOrderIn
 		return nil
 	})
 	if err != nil {
-		return domain.Order{}, err
+		return repository.Order{}, err
 	}
 	return created, nil
 }
 
-func (s *orderService) GetOrder(ctx context.Context, id int64) (domain.Order, error) {
+func (s *orderService) GetOrder(ctx context.Context, id int64) (repository.Order, error) {
 	principal, err := principalFor(ctx)
 	if err != nil {
-		return domain.Order{}, err
+		return repository.Order{}, err
 	}
 	order, err := s.repository.GetOrder(ctx, id)
 	if err != nil {
-		return domain.Order{}, serviceRepositoryError(err)
+		return repository.Order{}, serviceRepositoryError(err)
 	}
 	if principal.HasPermission("order.read.all") {
 		return redactPreparationOrder(principal, order), nil
@@ -168,13 +167,13 @@ func (s *orderService) GetOrder(ctx context.Context, id int64) (domain.Order, er
 			return redactPreparationOrder(principal, order), nil
 		}
 		if err != nil && !errors.Is(err, repository.ErrNotFound) {
-			return domain.Order{}, err
+			return repository.Order{}, err
 		}
 	}
-	return domain.Order{}, ErrForbidden
+	return repository.Order{}, ErrForbidden
 }
 
-func (s *orderService) PreparationQueue(ctx context.Context) ([]domain.Order, error) {
+func (s *orderService) PreparationQueue(ctx context.Context) ([]repository.Order, error) {
 	principal, err := principalFor(ctx)
 	if err != nil {
 		return nil, err
@@ -192,30 +191,30 @@ func (s *orderService) PreparationQueue(ctx context.Context) ([]domain.Order, er
 	return orders, nil
 }
 
-func (s *orderService) AdvanceStatus(ctx context.Context, id int64, target domain.OrderStatus) (domain.Order, error) {
+func (s *orderService) AdvanceStatus(ctx context.Context, id int64, target repository.OrderStatus) (repository.Order, error) {
 	principal, err := principalFor(ctx)
 	if err != nil {
-		return domain.Order{}, err
+		return repository.Order{}, err
 	}
-	var updated domain.Order
+	var updated repository.Order
 	err = s.repository.WithinOrderTx(ctx, func(tx repository.OrderTx) error {
 		current, err := tx.GetOrderForUpdate(ctx, id)
 		if err != nil {
 			return serviceRepositoryError(err)
 		}
-		if target == domain.OrderCancelled {
+		if target == repository.OrderCancelled {
 			if err := requirePermission(principal, "order.cancel"); err != nil {
 				return err
 			}
 			if principal.HasRole("customer") && !isStaff(principal) {
-				if current.Status != domain.OrderPending {
+				if current.Status != repository.OrderPending {
 					return ErrInvalidState
 				}
 				customer, err := tx.GetCustomerByUserID(ctx, principal.UserID)
 				if err != nil || current.CustomerID == nil || *current.CustomerID != customer.ID {
 					return ErrForbidden
 				}
-			} else if !isStaff(principal) || (current.Status != domain.OrderPending && current.Status != domain.OrderAccepted) {
+			} else if !isStaff(principal) || (current.Status != repository.OrderPending && current.Status != repository.OrderAccepted) {
 				return ErrInvalidState
 			}
 		} else {
@@ -236,28 +235,28 @@ func (s *orderService) AdvanceStatus(ctx context.Context, id int64, target domai
 		return err
 	})
 	if err != nil {
-		return domain.Order{}, err
+		return repository.Order{}, err
 	}
 	order, err := s.repository.GetOrder(ctx, updated.ID)
 	if err != nil {
-		return domain.Order{}, serviceRepositoryError(err)
+		return repository.Order{}, serviceRepositoryError(err)
 	}
 	return redactPreparationOrder(principal, order), nil
 }
 
-func redactPreparationOrder(principal auth.Principal, order domain.Order) domain.Order {
+func redactPreparationOrder(principal auth.Principal, order repository.Order) repository.Order {
 	preparationOnly := principal.HasPermission("order.read.preparation_queue") &&
 		!principal.HasPermission("order.read.all") &&
 		!principal.HasPermission("order.read.assigned") &&
 		!principal.HasPermission("order.read.own")
 	if preparationOnly {
 		order.CustomerEmail = nil
-		order.Payments = make([]domain.Payment, 0)
+		order.Payments = make([]repository.Payment, 0)
 	}
 	return order
 }
 
-func priceModifiers(product domain.Product, selectedIDs []int64) ([]domain.OrderItemModifier, domain.Money, error) {
+func priceModifiers(product repository.Product, selectedIDs []int64) ([]repository.OrderItemModifier, repository.Money, error) {
 	selected := make(map[int64]struct{}, len(selectedIDs))
 	for _, id := range selectedIDs {
 		if id < 1 {
@@ -268,8 +267,8 @@ func priceModifiers(product domain.Product, selectedIDs []int64) ([]domain.Order
 		}
 		selected[id] = struct{}{}
 	}
-	modifiers := make([]domain.OrderItemModifier, 0, len(selectedIDs))
-	var total domain.Money
+	modifiers := make([]repository.OrderItemModifier, 0, len(selectedIDs))
+	var total repository.Money
 	for _, group := range product.Groups {
 		var count int32
 		for _, option := range group.Options {
@@ -283,7 +282,7 @@ func priceModifiers(product domain.Product, selectedIDs []int64) ([]domain.Order
 			if err != nil {
 				return nil, 0, err
 			}
-			modifiers = append(modifiers, domain.OrderItemModifier{
+			modifiers = append(modifiers, repository.OrderItemModifier{
 				ModifierID: int64Pointer(option.ID), ModifierName: option.Name, PriceDelta: option.PriceDelta,
 			})
 		}
@@ -297,29 +296,29 @@ func priceModifiers(product domain.Product, selectedIDs []int64) ([]domain.Order
 	return modifiers, total, nil
 }
 
-func validOrderType(value domain.OrderType) bool {
-	return value == domain.OrderTakeaway || value == domain.OrderDineIn || value == domain.OrderDelivery
+func validOrderType(value repository.OrderType) bool {
+	return value == repository.OrderTakeaway || value == repository.OrderDineIn || value == repository.OrderDelivery
 }
 
-func validTransition(current, target domain.OrderStatus) bool {
+func validTransition(current, target repository.OrderStatus) bool {
 	switch current {
-	case domain.OrderPending:
-		return target == domain.OrderAccepted || target == domain.OrderCancelled
-	case domain.OrderAccepted:
-		return target == domain.OrderPreparing || target == domain.OrderCancelled
-	case domain.OrderPreparing:
-		return target == domain.OrderReady
-	case domain.OrderReady:
-		return target == domain.OrderCompleted
+	case repository.OrderPending:
+		return target == repository.OrderAccepted || target == repository.OrderCancelled
+	case repository.OrderAccepted:
+		return target == repository.OrderPreparing || target == repository.OrderCancelled
+	case repository.OrderPreparing:
+		return target == repository.OrderReady
+	case repository.OrderReady:
+		return target == repository.OrderCompleted
 	default:
 		return false
 	}
 }
 
-func validBaristaTransition(current, target domain.OrderStatus) bool {
-	return (current == domain.OrderAccepted && target == domain.OrderPreparing) ||
-		(current == domain.OrderPreparing && target == domain.OrderReady) ||
-		(current == domain.OrderReady && target == domain.OrderCompleted)
+func validBaristaTransition(current, target repository.OrderStatus) bool {
+	return (current == repository.OrderAccepted && target == repository.OrderPreparing) ||
+		(current == repository.OrderPreparing && target == repository.OrderReady) ||
+		(current == repository.OrderReady && target == repository.OrderCompleted)
 }
 
 func int64Pointer(value int64) *int64 { return &value }

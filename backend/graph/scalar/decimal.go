@@ -5,8 +5,8 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/james5635/coffee/backend/repository"
 	"github.com/james5635/coffee/backend/service"
-	"github.com/james5635/coffee/backend/service/domain"
 )
 
 type Decimal string
@@ -20,10 +20,10 @@ func (d *Decimal) UnmarshalGQL(value interface{}) error {
 	if !ok {
 		return fmt.Errorf("%w: Decimal must be supplied as a string", service.ErrInvalidInput)
 	}
-	money, err := domain.ParseMoney(text)
+	money, err := repository.ParseMoney(text)
 	if err != nil {
 		return fmt.Errorf("%w: invalid Decimal", service.ErrInvalidInput)
 	}
-	*d = Decimal(domain.FormatMoney(money))
+	*d = Decimal(repository.FormatMoney(money))
 	return nil
 }

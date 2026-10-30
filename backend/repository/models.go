@@ -1,4 +1,4 @@
-package domain
+package repository
 
 import "time"
 
@@ -162,7 +162,6 @@ type PaymentBalance struct {
 }
 
 func (b PaymentBalance) Net() Money { return b.Paid - b.Refunded }
-
 
 type PlaceOrderInput struct {
 	OrderType     OrderType

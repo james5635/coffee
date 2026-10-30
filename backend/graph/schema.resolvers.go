@@ -10,13 +10,13 @@ import (
 	"strings"
 
 	"github.com/james5635/coffee/backend/graph/model"
+	"github.com/james5635/coffee/backend/repository"
 	"github.com/james5635/coffee/backend/service"
-	"github.com/james5635/coffee/backend/service/domain"
 )
 
 // PlaceOrder is the resolver for the placeOrder field.
 func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.PlaceOrderInput) (*model.Order, error) {
-	items := make([]domain.PlaceOrderItemInput, 0, len(input.Items))
+	items := make([]repository.PlaceOrderItemInput, 0, len(input.Items))
 	for _, item := range input.Items {
 		if item == nil {
 			return nil, service.ErrInvalidInput
@@ -37,7 +37,7 @@ func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.PlaceOrde
 		if item.SpecialInstructions != nil {
 			specialInstructions = *item.SpecialInstructions
 		}
-		items = append(items, domain.PlaceOrderItemInput{
+		items = append(items, repository.PlaceOrderItemInput{
 			ProductID: productID, Quantity: item.Quantity, ModifierIDs: modifierIDs,
 			SpecialInstructions: specialInstructions,
 		})
@@ -46,8 +46,8 @@ func (r *mutationResolver) PlaceOrder(ctx context.Context, input model.PlaceOrde
 	if input.Notes != nil {
 		notes = *input.Notes
 	}
-	order, err := r.Orders.PlaceOrder(ctx, domain.PlaceOrderInput{
-		OrderType:    domain.OrderType(strings.ToLower(string(input.OrderType))),
+	order, err := r.Orders.PlaceOrder(ctx, repository.PlaceOrderInput{
+		OrderType:    repository.OrderType(strings.ToLower(string(input.OrderType))),
 		CustomerName: input.CustomerName, CustomerEmail: input.CustomerEmail,
 		Notes: notes, Items: items,
 	})
@@ -63,7 +63,7 @@ func (r *mutationResolver) AdvanceOrderStatus(ctx context.Context, orderID strin
 	if err != nil {
 		return nil, err
 	}
-	order, err := r.Orders.AdvanceStatus(ctx, id, domain.OrderStatus(strings.ToLower(string(status))))
+	order, err := r.Orders.AdvanceStatus(ctx, id, repository.OrderStatus(strings.ToLower(string(status))))
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +80,8 @@ func (r *mutationResolver) RecordPayment(ctx context.Context, input model.Record
 	if err != nil {
 		return nil, err
 	}
-	payment, err := r.Payments.RecordPayment(ctx, domain.RecordPaymentInput{
-		OrderID: orderID, Method: domain.PaymentMethod(strings.ToLower(string(input.Method))),
+	payment, err := r.Payments.RecordPayment(ctx, repository.RecordPaymentInput{
+		OrderID: orderID, Method: repository.PaymentMethod(strings.ToLower(string(input.Method))),
 		Amount: amount, ExternalReference: input.ExternalReference,
 	})
 	if err != nil {
@@ -101,8 +101,8 @@ func (r *mutationResolver) IssueRefund(ctx context.Context, input model.IssueRef
 	if err != nil {
 		return nil, err
 	}
-	payment, err := r.Payments.IssueRefund(ctx, domain.IssueRefundInput{
-		OrderID: orderID, Method: domain.PaymentMethod(strings.ToLower(string(input.Method))),
+	payment, err := r.Payments.IssueRefund(ctx, repository.IssueRefundInput{
+		OrderID: orderID, Method: repository.PaymentMethod(strings.ToLower(string(input.Method))),
 		Amount: amount, ExternalReference: input.ExternalReference,
 	})
 	if err != nil {

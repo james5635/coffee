@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/james5635/coffee/backend/service/domain"
+	"github.com/james5635/coffee/backend/repository"
 )
 
-func multiplyMoney(value domain.Money, quantity int32) (domain.Money, error) {
+func multiplyMoney(value repository.Money, quantity int32) (repository.Money, error) {
 	result := new(big.Int).Mul(big.NewInt(int64(value)), big.NewInt(int64(quantity)))
 	return moneyFromBig(result)
 }
 
-func addMoney(values ...domain.Money) (domain.Money, error) {
+func addMoney(values ...repository.Money) (repository.Money, error) {
 	result := new(big.Int)
 	for _, value := range values {
 		result.Add(result, big.NewInt(int64(value)))
@@ -20,7 +20,7 @@ func addMoney(values ...domain.Money) (domain.Money, error) {
 	return moneyFromBig(result)
 }
 
-func calculateTax(subtotal domain.Money, rate domain.TaxRate) (domain.Money, error) {
+func calculateTax(subtotal repository.Money, rate repository.TaxRate) (repository.Money, error) {
 	product := new(big.Int).Mul(big.NewInt(int64(subtotal)), big.NewInt(int64(rate)))
 	quotient, remainder := new(big.Int), new(big.Int)
 	quotient.QuoRem(product, big.NewInt(100000), remainder)
@@ -30,9 +30,9 @@ func calculateTax(subtotal domain.Money, rate domain.TaxRate) (domain.Money, err
 	return moneyFromBig(quotient)
 }
 
-func moneyFromBig(value *big.Int) (domain.Money, error) {
+func moneyFromBig(value *big.Int) (repository.Money, error) {
 	if !value.IsInt64() {
 		return 0, fmt.Errorf("%w: amount exceeds supported range", ErrInvalidInput)
 	}
-	return domain.Money(value.Int64()), nil
+	return repository.Money(value.Int64()), nil
 }

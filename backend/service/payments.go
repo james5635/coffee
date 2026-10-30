@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/james5635/coffee/backend/repository"
-	"github.com/james5635/coffee/backend/service/domain"
 )
 
 type paymentService struct{ repository repository.PaymentRepository }
@@ -14,26 +13,26 @@ func NewPaymentService(repository repository.PaymentRepository) PaymentService {
 	return &paymentService{repository: repository}
 }
 
-func (s *paymentService) RecordPayment(ctx context.Context, input domain.RecordPaymentInput) (domain.Payment, error) {
+func (s *paymentService) RecordPayment(ctx context.Context, input repository.RecordPaymentInput) (repository.Payment, error) {
 	principal, err := principalFor(ctx)
 	if err != nil {
-		return domain.Payment{}, err
+		return repository.Payment{}, err
 	}
 	if err := requirePermission(principal, "payment.accept"); err != nil {
-		return domain.Payment{}, err
+		return repository.Payment{}, err
 	}
 	if input.OrderID < 1 || input.Amount <= 0 || !validPaymentMethod(input.Method) {
-		return domain.Payment{}, fmt.Errorf("%w: invalid payment details", ErrInvalidInput)
+		return repository.Payment{}, fmt.Errorf("%w: invalid payment details", ErrInvalidInput)
 	}
 	input.ExternalReference = cleanedString(input.ExternalReference)
 	inputCopy := input
-	var recorded domain.Payment
+	var recorded repository.Payment
 	err = s.repository.WithinPaymentTx(ctx, func(tx repository.PaymentTx) error {
 		order, err := tx.GetOrderForUpdate(ctx, inputCopy.OrderID)
 		if err != nil {
 			return serviceRepositoryError(err)
 		}
-		if order.Status != domain.OrderPending && order.Status != domain.OrderAccepted {
+		if order.Status != repository.OrderPending && order.Status != repository.OrderAccepted {
 			return ErrInvalidState
 		}
 		balance, err := tx.GetPaymentBalanceForUpdate(ctx, inputCopy.OrderID)
@@ -44,9 +43,9 @@ func (s *paymentService) RecordPayment(ctx context.Context, input domain.RecordP
 		if remaining < 0 || inputCopy.Amount > remaining {
 			return ErrInsufficient
 		}
-		recorded, err = tx.RecordSuccessfulPayment(ctx, domain.Payment{
+		recorded, err = tx.RecordSuccessfulPayment(ctx, repository.Payment{
 			OrderID: inputCopy.OrderID, RecordedBy: int64Pointer(principal.UserID),
-			Kind: domain.PaymentKindPayment, Status: domain.PaymentSucceeded,
+			Kind: repository.PaymentKindPayment, Status: repository.PaymentSucceeded,
 			Method: inputCopy.Method, Amount: inputCopy.Amount,
 			ExternalReference: inputCopy.ExternalReference,
 		})
@@ -55,20 +54,20 @@ func (s *paymentService) RecordPayment(ctx context.Context, input domain.RecordP
 	return recorded, err
 }
 
-func (s *paymentService) IssueRefund(ctx context.Context, input domain.IssueRefundInput) (domain.Payment, error) {
+func (s *paymentService) IssueRefund(ctx context.Context, input repository.IssueRefundInput) (repository.Payment, error) {
 	principal, err := principalFor(ctx)
 	if err != nil {
-		return domain.Payment{}, err
+		return repository.Payment{}, err
 	}
 	if err := requirePermission(principal, "payment.refund"); err != nil {
-		return domain.Payment{}, err
+		return repository.Payment{}, err
 	}
 	if input.OrderID < 1 || input.Amount <= 0 || !validPaymentMethod(input.Method) {
-		return domain.Payment{}, fmt.Errorf("%w: invalid refund details", ErrInvalidInput)
+		return repository.Payment{}, fmt.Errorf("%w: invalid refund details", ErrInvalidInput)
 	}
 	input.ExternalReference = cleanedString(input.ExternalReference)
 	inputCopy := input
-	var refunded domain.Payment
+	var refunded repository.Payment
 	err = s.repository.WithinPaymentTx(ctx, func(tx repository.PaymentTx) error {
 		if _, err := tx.GetOrderForUpdate(ctx, inputCopy.OrderID); err != nil {
 			return serviceRepositoryError(err)
@@ -80,9 +79,9 @@ func (s *paymentService) IssueRefund(ctx context.Context, input domain.IssueRefu
 		if inputCopy.Amount > balance.Net() {
 			return ErrInsufficient
 		}
-		refunded, err = tx.CreateRefund(ctx, domain.Payment{
+		refunded, err = tx.CreateRefund(ctx, repository.Payment{
 			OrderID: inputCopy.OrderID, RecordedBy: int64Pointer(principal.UserID),
-			Kind: domain.PaymentKindRefund, Status: domain.PaymentSucceeded,
+			Kind: repository.PaymentKindRefund, Status: repository.PaymentSucceeded,
 			Method: inputCopy.Method, Amount: inputCopy.Amount,
 			ExternalReference: inputCopy.ExternalReference,
 		})
@@ -91,9 +90,9 @@ func (s *paymentService) IssueRefund(ctx context.Context, input domain.IssueRefu
 	return refunded, err
 }
 
-func validPaymentMethod(method domain.PaymentMethod) bool {
+func validPaymentMethod(method repository.PaymentMethod) bool {
 	switch method {
-	case domain.PaymentCash, domain.PaymentCard, domain.PaymentOnline, domain.PaymentOther:
+	case repository.PaymentCash, repository.PaymentCard, repository.PaymentOnline, repository.PaymentOther:
 		return true
 	default:
 		return false

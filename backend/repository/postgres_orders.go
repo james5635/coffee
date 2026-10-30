@@ -6,27 +6,26 @@ import (
 	"fmt"
 
 	db "github.com/james5635/coffee/backend/db"
-	"github.com/james5635/coffee/backend/service/domain"
 )
 
-func (p *Postgres) GetOrder(ctx context.Context, id int64) (domain.Order, error) {
+func (p *Postgres) GetOrder(ctx context.Context, id int64) (Order, error) {
 	return loadOrder(ctx, p.queries, id)
 }
 
-func (p *Postgres) GetCustomerByUserID(ctx context.Context, userID int64) (domain.Customer, error) {
+func (p *Postgres) GetCustomerByUserID(ctx context.Context, userID int64) (Customer, error) {
 	row, err := p.queries.GetCustomerByUserID(ctx, sql.NullInt64{Int64: userID, Valid: true})
 	if err != nil {
-		return domain.Customer{}, mapQueryError(err)
+		return Customer{}, mapQueryError(err)
 	}
 	return customerFromDB(row), nil
 }
 
-func (p *Postgres) ListPreparationQueue(ctx context.Context) ([]domain.Order, error) {
+func (p *Postgres) ListPreparationQueue(ctx context.Context) ([]Order, error) {
 	rows, err := p.queries.ListPreparationQueue(ctx)
 	if err != nil {
 		return nil, err
 	}
-	orders := make([]domain.Order, 0, len(rows))
+	orders := make([]Order, 0, len(rows))
 	for _, row := range rows {
 		order, err := loadOrder(ctx, p.queries, row.ID)
 		if err != nil {
@@ -37,34 +36,34 @@ func (p *Postgres) ListPreparationQueue(ctx context.Context) ([]domain.Order, er
 	return orders, nil
 }
 
-func loadOrder(ctx context.Context, queries *db.Queries, id int64) (domain.Order, error) {
+func loadOrder(ctx context.Context, queries *db.Queries, id int64) (Order, error) {
 	row, err := queries.GetOrderByID(ctx, id)
 	if err != nil {
-		return domain.Order{}, mapQueryError(err)
+		return Order{}, mapQueryError(err)
 	}
 	order, err := orderFromDB(row)
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
 	items, err := queries.ListOrderItems(ctx, id)
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
-	order.Items = make([]domain.OrderItem, 0, len(items))
+	order.Items = make([]OrderItem, 0, len(items))
 	for _, itemRow := range items {
 		item, err := orderItemFromDB(itemRow)
 		if err != nil {
-			return domain.Order{}, err
+			return Order{}, err
 		}
 		modifierRows, err := queries.ListOrderItemModifiers(ctx, itemRow.ID)
 		if err != nil {
-			return domain.Order{}, err
+			return Order{}, err
 		}
-		item.Modifiers = make([]domain.OrderItemModifier, 0, len(modifierRows))
+		item.Modifiers = make([]OrderItemModifier, 0, len(modifierRows))
 		for _, modifierRow := range modifierRows {
 			modifier, err := orderItemModifierFromDB(modifierRow)
 			if err != nil {
-				return domain.Order{}, err
+				return Order{}, err
 			}
 			item.Modifiers = append(item.Modifiers, modifier)
 		}
@@ -72,39 +71,39 @@ func loadOrder(ctx context.Context, queries *db.Queries, id int64) (domain.Order
 	}
 	paymentRows, err := queries.ListOrderPayments(ctx, id)
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
-	order.Payments = make([]domain.Payment, 0, len(paymentRows))
+	order.Payments = make([]Payment, 0, len(paymentRows))
 	for _, paymentRow := range paymentRows {
 		payment, err := paymentFromDB(paymentRow)
 		if err != nil {
-			return domain.Order{}, err
+			return Order{}, err
 		}
 		order.Payments = append(order.Payments, payment)
 	}
 	return order, nil
 }
 
-func orderFromDB(row db.Order) (domain.Order, error) {
-	subtotal, err := domain.ParseMoney(row.Subtotal)
+func orderFromDB(row db.Order) (Order, error) {
+	subtotal, err := ParseMoney(row.Subtotal)
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
-	discount, err := domain.ParseMoney(row.DiscountAmount)
+	discount, err := ParseMoney(row.DiscountAmount)
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
-	tax, err := domain.ParseMoney(row.TaxAmount)
+	tax, err := ParseMoney(row.TaxAmount)
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
-	total, err := domain.ParseMoney(row.Total)
+	total, err := ParseMoney(row.Total)
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
-	order := domain.Order{
+	order := Order{
 		ID: row.ID, CustomerID: nullableInt64(row.CustomerID), CreatedBy: nullableInt64(row.CreatedBy),
-		Status: domain.OrderStatus(row.Status), Type: domain.OrderType(row.OrderType),
+		Status: OrderStatus(row.Status), Type: OrderType(row.OrderType),
 		CustomerName: nullableString(row.CustomerName), CustomerEmail: nullableString(row.CustomerEmail),
 		Notes: row.Notes, Subtotal: subtotal, DiscountAmount: discount, TaxAmount: tax,
 		Total: total, Currency: row.Currency, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
@@ -119,35 +118,35 @@ func orderFromDB(row db.Order) (domain.Order, error) {
 	return order, nil
 }
 
-func orderItemFromDB(row db.OrderItem) (domain.OrderItem, error) {
-	unitPrice, err := domain.ParseMoney(row.UnitPrice)
+func orderItemFromDB(row db.OrderItem) (OrderItem, error) {
+	unitPrice, err := ParseMoney(row.UnitPrice)
 	if err != nil {
-		return domain.OrderItem{}, err
+		return OrderItem{}, err
 	}
-	lineTotal, err := domain.ParseMoney(row.LineTotal)
+	lineTotal, err := ParseMoney(row.LineTotal)
 	if err != nil {
-		return domain.OrderItem{}, err
+		return OrderItem{}, err
 	}
-	return domain.OrderItem{
+	return OrderItem{
 		ID: row.ID, OrderID: row.OrderID, ProductID: nullableInt64(row.ProductID),
 		ProductName: row.ProductName, Quantity: row.Quantity, UnitPrice: unitPrice,
 		LineTotal: lineTotal, SpecialInstructions: row.SpecialInstructions,
 	}, nil
 }
 
-func orderItemModifierFromDB(row db.OrderItemModifier) (domain.OrderItemModifier, error) {
-	priceDelta, err := domain.ParseMoney(row.PriceDelta)
+func orderItemModifierFromDB(row db.OrderItemModifier) (OrderItemModifier, error) {
+	priceDelta, err := ParseMoney(row.PriceDelta)
 	if err != nil {
-		return domain.OrderItemModifier{}, err
+		return OrderItemModifier{}, err
 	}
-	return domain.OrderItemModifier{
+	return OrderItemModifier{
 		ID: row.ID, OrderItemID: row.OrderItemID, ModifierID: nullableInt64(row.ModifierID),
 		ModifierName: row.ModifierName, PriceDelta: priceDelta,
 	}, nil
 }
 
-func customerFromDB(row db.Customer) domain.Customer {
-	return domain.Customer{
+func customerFromDB(row db.Customer) Customer {
+	return Customer{
 		ID: row.ID, UserID: nullableInt64(row.UserID), DisplayName: row.DisplayName,
 		Email: nullableString(row.Email), Phone: nullableString(row.Phone), CreatedAt: row.CreatedAt,
 	}
@@ -155,92 +154,92 @@ func customerFromDB(row db.Customer) domain.Customer {
 
 type postgresOrderTx struct{ queries *db.Queries }
 
-func (tx *postgresOrderTx) GetCustomerByUserID(ctx context.Context, userID int64) (domain.Customer, error) {
+func (tx *postgresOrderTx) GetCustomerByUserID(ctx context.Context, userID int64) (Customer, error) {
 	row, err := tx.queries.GetCustomerByUserID(ctx, sql.NullInt64{Int64: userID, Valid: true})
 	if err != nil {
-		return domain.Customer{}, mapQueryError(err)
+		return Customer{}, mapQueryError(err)
 	}
 	return customerFromDB(row), nil
 }
 
-func (tx *postgresOrderTx) GetShopSettings(ctx context.Context) (domain.ShopSettings, error) {
+func (tx *postgresOrderTx) GetShopSettings(ctx context.Context) (ShopSettings, error) {
 	row, err := tx.queries.GetShopSettings(ctx)
 	if err != nil {
-		return domain.ShopSettings{}, mapQueryError(err)
+		return ShopSettings{}, mapQueryError(err)
 	}
-	taxRate, err := domain.ParseTaxRate(row.TaxRate)
+	taxRate, err := ParseTaxRate(row.TaxRate)
 	if err != nil {
-		return domain.ShopSettings{}, err
+		return ShopSettings{}, err
 	}
-	return domain.ShopSettings{Name: row.Name, Currency: row.Currency, TaxRate: taxRate}, nil
+	return ShopSettings{Name: row.Name, Currency: row.Currency, TaxRate: taxRate}, nil
 }
 
-func (tx *postgresOrderTx) GetOrCreateCustomer(ctx context.Context, userID int64) (domain.Customer, error) {
+func (tx *postgresOrderTx) GetOrCreateCustomer(ctx context.Context, userID int64) (Customer, error) {
 	row, err := tx.queries.GetOrCreateCustomerForUser(ctx, userID)
 	if err != nil {
-		return domain.Customer{}, mapQueryError(err)
+		return Customer{}, mapQueryError(err)
 	}
 	return customerFromDB(row), nil
 }
 
-func (tx *postgresOrderTx) GetSellableProduct(ctx context.Context, productID int64) (domain.Product, error) {
+func (tx *postgresOrderTx) GetSellableProduct(ctx context.Context, productID int64) (Product, error) {
 	return sellableProduct(ctx, tx.queries, productID)
 }
 
-func (tx *postgresOrderTx) CreateOrder(ctx context.Context, order domain.Order) (domain.Order, error) {
+func (tx *postgresOrderTx) CreateOrder(ctx context.Context, order Order) (Order, error) {
 	row, err := tx.queries.CreateOrder(ctx, db.CreateOrderParams{
 		CustomerID: nullInt64(order.CustomerID), CreatedBy: nullInt64(order.CreatedBy),
 		OrderType: string(order.Type), CustomerName: nullString(order.CustomerName),
 		CustomerEmail: nullString(order.CustomerEmail), Notes: order.Notes,
-		Subtotal: domain.FormatMoney(order.Subtotal), DiscountAmount: domain.FormatMoney(order.DiscountAmount),
-		TaxAmount: domain.FormatMoney(order.TaxAmount), Total: domain.FormatMoney(order.Total), Currency: order.Currency,
+		Subtotal: FormatMoney(order.Subtotal), DiscountAmount: FormatMoney(order.DiscountAmount),
+		TaxAmount: FormatMoney(order.TaxAmount), Total: FormatMoney(order.Total), Currency: order.Currency,
 	})
 	if err != nil {
-		return domain.Order{}, err
+		return Order{}, err
 	}
 	return orderFromDB(row)
 }
 
-func (tx *postgresOrderTx) AddOrderItem(ctx context.Context, item domain.OrderItem) (domain.OrderItem, error) {
+func (tx *postgresOrderTx) AddOrderItem(ctx context.Context, item OrderItem) (OrderItem, error) {
 	row, err := tx.queries.AddOrderItem(ctx, db.AddOrderItemParams{
 		OrderID: item.OrderID, ProductID: nullInt64(item.ProductID), ProductName: item.ProductName,
-		Quantity: item.Quantity, UnitPrice: domain.FormatMoney(item.UnitPrice),
-		LineTotal: domain.FormatMoney(item.LineTotal), SpecialInstructions: item.SpecialInstructions,
+		Quantity: item.Quantity, UnitPrice: FormatMoney(item.UnitPrice),
+		LineTotal: FormatMoney(item.LineTotal), SpecialInstructions: item.SpecialInstructions,
 	})
 	if err != nil {
-		return domain.OrderItem{}, err
+		return OrderItem{}, err
 	}
 	return orderItemFromDB(row)
 }
 
-func (tx *postgresOrderTx) AddOrderItemModifier(ctx context.Context, modifier domain.OrderItemModifier) (domain.OrderItemModifier, error) {
+func (tx *postgresOrderTx) AddOrderItemModifier(ctx context.Context, modifier OrderItemModifier) (OrderItemModifier, error) {
 	row, err := tx.queries.AddOrderItemModifier(ctx, db.AddOrderItemModifierParams{
 		OrderItemID: modifier.OrderItemID, ModifierID: nullInt64(modifier.ModifierID),
-		ModifierName: modifier.ModifierName, PriceDelta: domain.FormatMoney(modifier.PriceDelta),
+		ModifierName: modifier.ModifierName, PriceDelta: FormatMoney(modifier.PriceDelta),
 	})
 	if err != nil {
-		return domain.OrderItemModifier{}, err
+		return OrderItemModifier{}, err
 	}
 	return orderItemModifierFromDB(row)
 }
 
-func (tx *postgresOrderTx) GetOrderForUpdate(ctx context.Context, orderID int64) (domain.Order, error) {
+func (tx *postgresOrderTx) GetOrderForUpdate(ctx context.Context, orderID int64) (Order, error) {
 	row, err := tx.queries.GetOrderForUpdate(ctx, orderID)
 	if err != nil {
-		return domain.Order{}, mapQueryError(err)
+		return Order{}, mapQueryError(err)
 	}
 	return orderFromDB(row)
 }
 
-func (tx *postgresOrderTx) SetOrderStatus(ctx context.Context, orderID int64, expected, target domain.OrderStatus) (domain.Order, error) {
+func (tx *postgresOrderTx) SetOrderStatus(ctx context.Context, orderID int64, expected, target OrderStatus) (Order, error) {
 	row, err := tx.queries.UpdateOrderStatusIfCurrent(ctx, db.UpdateOrderStatusIfCurrentParams{
 		ID: orderID, Status: string(target), Status_2: string(expected),
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return domain.Order{}, ErrConflict
+			return Order{}, ErrConflict
 		}
-		return domain.Order{}, fmt.Errorf("update order status: %w", err)
+		return Order{}, fmt.Errorf("update order status: %w", err)
 	}
 	return orderFromDB(row)
 }

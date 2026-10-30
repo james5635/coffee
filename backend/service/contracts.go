@@ -3,22 +3,22 @@ package service
 import (
 	"context"
 
-	"github.com/james5635/coffee/backend/service/domain"
+	"github.com/james5635/coffee/backend/repository"
 )
 
 type MenuService interface {
-	Categories(context.Context) ([]domain.Category, error)
-	Products(context.Context, *int64) ([]domain.Product, error)
+	Categories(context.Context) ([]repository.Category, error)
+	Products(context.Context, *int64) ([]repository.Product, error)
 }
 
 type OrderService interface {
-	PlaceOrder(context.Context, domain.PlaceOrderInput) (domain.Order, error)
-	GetOrder(context.Context, int64) (domain.Order, error)
-	PreparationQueue(context.Context) ([]domain.Order, error)
-	AdvanceStatus(context.Context, int64, domain.OrderStatus) (domain.Order, error)
+	PlaceOrder(context.Context, repository.PlaceOrderInput) (repository.Order, error)
+	GetOrder(context.Context, int64) (repository.Order, error)
+	PreparationQueue(context.Context) ([]repository.Order, error)
+	AdvanceStatus(context.Context, int64, repository.OrderStatus) (repository.Order, error)
 }
 
 type PaymentService interface {
-	RecordPayment(context.Context, domain.RecordPaymentInput) (domain.Payment, error)
-	IssueRefund(context.Context, domain.IssueRefundInput) (domain.Payment, error)
+	RecordPayment(context.Context, repository.RecordPaymentInput) (repository.Payment, error)
+	IssueRefund(context.Context, repository.IssueRefundInput) (repository.Payment, error)
 }
