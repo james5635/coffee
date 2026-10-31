@@ -186,7 +186,77 @@ describe('AuthService', () => {
       expect(result.errors?.[0]?.extensions?.code).toBe('TOKEN_EXPIRED');
     });
 
-    it('passes responses through untouched when they are not TOKEN_EXPIRED', async () => {
+    it('refreshes once and retries on UNAUTHENTICATED while a token is held', async () => {
+      authState.setAccessToken('expired-token');
+
+      const promise = authService.query<{ me: string }>({ query: '{ me }' });
+
+      // The merged backend surfaces an expired bearer as UNAUTHENTICATED.
+      let req = httpMock.expectOne('/query');
+      expect(req.request.headers.get('Authorization')).toBe('Bearer expired-token');
+      req.flush({
+        errors: [
+          { message: 'Authentication is required.', extensions: { code: 'UNAUTHENTICATED' } },
+        ],
+      });
+      await settle();
+
+      // Refresh runs once, cookie-only (no bearer).
+      req = httpMock.expectOne('/query');
+      expect(req.request.body.query).toContain('mutation RefreshToken');
+      expect(req.request.headers.has('Authorization')).toBeFalsy();
+      req.flush({
+        data: {
+          refreshToken: { accessToken: 'refreshed-token', tokenType: 'Bearer', expiresIn: 900 },
+        },
+      });
+      await settle();
+
+      // The original operation is retried once with the new token.
+      req = httpMock.expectOne('/query');
+      expect(req.request.body.query).toContain('{ me }');
+      expect(req.request.headers.get('Authorization')).toBe('Bearer refreshed-token');
+      req.flush({ data: { me: 'user' } });
+
+      const result = await promise;
+      expect(result.data).toEqual({ me: 'user' });
+      expect(authState.accessToken()).toBe('refreshed-token');
+    });
+
+    it('passes UNAUTHENTICATED through untouched when no token is held', async () => {
+      const promise = authService.query<{ me: string }>({ query: '{ me }' });
+
+      const req = httpMock.expectOne('/query');
+      expect(req.request.headers.has('Authorization')).toBeFalsy();
+      req.flush({
+        errors: [
+          { message: 'Authentication is required.', extensions: { code: 'UNAUTHENTICATED' } },
+        ],
+      });
+
+      const result = await promise;
+      expect(result.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
+      // No refresh was attempted (httpMock.verify() would fail otherwise).
+    });
+
+    it('clears the session and returns the UNAUTHENTICATED errors when the refresh fails', async () => {
+      authState.setAccessToken('expired-token');
+
+      const promise = authService.query<{ me: string }>({ query: '{ me }' });
+
+      let req = httpMock.expectOne('/query');
+      req.flush({ errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] });
+      await settle();
+
+      req = httpMock.expectOne('/query');
+      req.flush({ errors: [{ extensions: { code: 'INVALID_REFRESH_TOKEN' } }] });
+
+      const result = await promise;
+      expect(result.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
+      expect(authState.isAuthenticated()).toBe(false);
+    });
+
+    it('passes successful responses through untouched', async () => {
       const promise = authService.query<{ categories: unknown[] }>({
         query: '{ categories { id } }',
       });

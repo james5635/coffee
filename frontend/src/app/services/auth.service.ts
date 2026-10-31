@@ -58,9 +58,11 @@ export class AuthError extends Error {
 
 /**
  * Auth operations (login/refresh/logout) plus the auth-aware query
- * orchestration: on `TOKEN_EXPIRED`, refresh the session once and retry the
- * original operation once with the new token; on refresh failure clear the
- * session so the app can route to login.
+ * orchestration: on `TOKEN_EXPIRED`, or on `UNAUTHENTICATED` while a token is
+ * held (the code the merged backend emits for an expired bearer with a valid
+ * refresh cookie), refresh the session once and retry the original operation
+ * once with the new token; on refresh failure clear the session so the app can
+ * route to login.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -68,16 +70,16 @@ export class AuthService {
   private readonly authState = inject(AuthStateService);
 
   /**
-   * Runs a GraphQL operation with refresh-on-expiry orchestration. Non-
-   * `TOKEN_EXPIRED` responses pass through untouched; a failed refresh clears
-   * the session and returns the original `TOKEN_EXPIRED` response.
+   * Runs a GraphQL operation with refresh-on-expiry orchestration. Responses
+   * that carry neither refreshable code pass through untouched; a failed
+   * refresh clears the session and returns the original response.
    */
   async query<T>(req: {
     query: string;
     variables?: Record<string, unknown>;
   }): Promise<GraphQLResponse<T>> {
     const response = await this.graphql.query<T>(req);
-    if (!hasGraphQLErrorCode(response, 'TOKEN_EXPIRED')) {
+    if (!this.isRefreshable(response)) {
       return response;
     }
     const refreshed = await this.refreshSession();
@@ -86,6 +88,21 @@ export class AuthService {
     }
     // Single retry; the bearer header is re-read from auth state automatically.
     return this.graphql.query<T>(req);
+  }
+
+  /**
+   * Whether a response should trigger a refresh attempt: `TOKEN_EXPIRED`
+   * (design's trigger) or `UNAUTHENTICATED` while a token is held (what the
+   * merged backend emits when an expired bearer passes through anonymously
+   * with a refresh cookie present). `UNAUTHENTICATED` without a held token is
+   * a genuinely anonymous request and passes through untouched — boot-time
+   * silent refresh without a held token is out of phase-1 scope.
+   */
+  private isRefreshable<T>(response: GraphQLResponse<T>): boolean {
+    if (hasGraphQLErrorCode(response, 'TOKEN_EXPIRED')) {
+      return true;
+    }
+    return this.authState.isAuthenticated() && hasGraphQLErrorCode(response, 'UNAUTHENTICATED');
   }
 
   async login(email: string, password: string): Promise<{ accessToken: string }> {
