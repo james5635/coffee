@@ -5,25 +5,28 @@ describe('AuthStateService', () => {
   let service: AuthStateService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [AuthStateService] });
+    TestBed.configureTestingModule({});
     service = TestBed.inject(AuthStateService);
   });
 
   it('starts unauthenticated with no access token', () => {
     expect(service.accessToken()).toBeNull();
-    expect(service.isAuthenticated()).toBeFalsy();
+    expect(service.isAuthenticated()).toBe(false);
   });
 
   it('becomes authenticated after setAccessToken', () => {
-    service.setAccessToken('test-token-123');
-    expect(service.accessToken()).toBe('test-token-123');
-    expect(service.isAuthenticated()).toBeTruthy();
+    service.setAccessToken('token-123');
+
+    expect(service.accessToken()).toBe('token-123');
+    expect(service.isAuthenticated()).toBe(true);
   });
 
   it('clears the session after clearSession', () => {
-    service.setAccessToken('test-token-123');
+    service.setAccessToken('token-123');
+
     service.clearSession();
+
     expect(service.accessToken()).toBeNull();
-    expect(service.isAuthenticated()).toBeFalsy();
+    expect(service.isAuthenticated()).toBe(false);
   });
 });

@@ -1,18 +1,26 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 
+/**
+ * In-memory auth state for the client session.
+ *
+ * The access token lives in memory only (never persisted); the refresh token
+ * is held by the backend in an HttpOnly cookie and is never exposed to JS.
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthStateService {
-  private readonly _accessToken = signal<string | null>(null);
+  private readonly token = signal<string | null>(null);
 
-  readonly accessToken = this._accessToken.asReadonly();
+  /** Current access token, or null when unauthenticated. */
+  readonly accessToken = this.token.asReadonly();
 
-  readonly isAuthenticated = computed(() => this._accessToken() !== null);
+  /** Whether an access token is currently held. */
+  readonly isAuthenticated = computed(() => this.token() !== null);
 
   setAccessToken(token: string): void {
-    this._accessToken.set(token);
+    this.token.set(token);
   }
 
   clearSession(): void {
-    this._accessToken.set(null);
+    this.token.set(null);
   }
 }
