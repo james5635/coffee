@@ -62,12 +62,18 @@ export class AuthError extends Error {
  * held (the code the merged backend emits for an expired bearer with a valid
  * refresh cookie), refresh the session once and retry the original operation
  * once with the new token; on refresh failure clear the session so the app can
- * route to login.
+ * route to login. Concurrent refresh triggers are coalesced into a single
+ * in-flight refresh (single-flight), so parallel expiring requests never race
+ * to consume the rotating refresh cookie; the session is cleared only when
+ * that shared refresh genuinely fails.
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly graphql = inject(GraphQLService);
   private readonly authState = inject(AuthStateService);
+
+  /** Shared in-flight refresh, so concurrent triggers await one rotation. */
+  private refreshInFlight: Promise<boolean> | null = null;
 
   /**
    * Runs a GraphQL operation with refresh-on-expiry orchestration. Responses
@@ -125,8 +131,20 @@ export class AuthService {
   /**
    * Refreshes the session from the HttpOnly refresh cookie (cookie-only, no
    * bearer). Never throws: any failure clears the session and returns false.
+   * Concurrent callers share a single in-flight refresh (single-flight), so
+   * parallel expiring requests never race each other to the rotating refresh
+   * cookie and a losing response can't clear a freshly rotated token.
    */
-  async refreshSession(): Promise<boolean> {
+  refreshSession(): Promise<boolean> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = this.performRefresh().finally(() => {
+        this.refreshInFlight = null;
+      });
+    }
+    return this.refreshInFlight;
+  }
+
+  private async performRefresh(): Promise<boolean> {
     try {
       const response = await this.graphql.query<RefreshTokenResponse>(
         { query: REFRESH_MUTATION },

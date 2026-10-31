@@ -256,6 +256,92 @@ describe('AuthService', () => {
       expect(authState.isAuthenticated()).toBe(false);
     });
 
+    it('coalesces concurrent refresh triggers into a single refresh mutation', async () => {
+      authState.setAccessToken('expired-token');
+
+      const promiseA = authService.query<{ ok: boolean }>({ query: '{ a }' });
+      const promiseB = authService.query<{ ok: boolean }>({ query: '{ b }' });
+
+      // Both original operations fail with the expired bearer.
+      const originals = httpMock.match(() => true);
+      expect(originals.length).toBe(2);
+      for (const req of originals) {
+        expect(req.request.headers.get('Authorization')).toBe('Bearer expired-token');
+        req.flush({ errors: [{ extensions: { code: 'TOKEN_EXPIRED' } }] });
+      }
+      await settle();
+
+      // Two triggers raced, but only ONE refresh mutation is dispatched
+      // (expectOne throws if a second concurrent refresh were also issued).
+      const refresh = httpMock.expectOne('/query');
+      expect(refresh.request.body.query).toContain('mutation RefreshToken');
+      refresh.flush({
+        data: {
+          refreshToken: { accessToken: 'refreshed-token', tokenType: 'Bearer', expiresIn: 900 },
+        },
+      });
+      await settle();
+
+      // Both operations retry with the shared fresh token.
+      const retries = httpMock.match(() => true);
+      expect(retries.length).toBe(2);
+      for (const req of retries) {
+        expect(req.request.headers.get('Authorization')).toBe('Bearer refreshed-token');
+        req.flush({ data: { ok: true } });
+      }
+
+      const [resultA, resultB] = await Promise.all([promiseA, promiseB]);
+      expect(resultA.data).toEqual({ ok: true });
+      expect(resultB.data).toEqual({ ok: true });
+      // The session survives: the losing trigger never clears the rotated token.
+      expect(authState.accessToken()).toBe('refreshed-token');
+    });
+
+    it('shares one failing refresh across concurrent triggers and clears the session once', async () => {
+      authState.setAccessToken('expired-token');
+
+      const promiseA = authService.query<{ ok: boolean }>({ query: '{ a }' });
+      const promiseB = authService.query<{ ok: boolean }>({ query: '{ b }' });
+
+      const originals = httpMock.match(() => true);
+      expect(originals.length).toBe(2);
+      for (const req of originals) {
+        req.flush({ errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] });
+      }
+      await settle();
+
+      // A single refresh mutation serves both triggers, and it genuinely fails.
+      const refresh = httpMock.expectOne('/query');
+      refresh.flush({ errors: [{ extensions: { code: 'INVALID_REFRESH_TOKEN' } }] });
+
+      const [resultA, resultB] = await Promise.all([promiseA, promiseB]);
+      expect(resultA.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
+      expect(resultB.errors?.[0]?.extensions?.code).toBe('UNAUTHENTICATED');
+      expect(authState.isAuthenticated()).toBe(false);
+    });
+
+    it('starts a fresh refresh after a previous in-flight refresh settles', async () => {
+      const first = authService.refreshSession();
+      let req = httpMock.expectOne('/query');
+      req.flush({
+        data: {
+          refreshToken: { accessToken: 'token-1', tokenType: 'Bearer', expiresIn: 900 },
+        },
+      });
+      expect(await first).toBe(true);
+
+      // The in-flight slot is reset, so a later trigger refreshes again.
+      const second = authService.refreshSession();
+      req = httpMock.expectOne('/query');
+      req.flush({
+        data: {
+          refreshToken: { accessToken: 'token-2', tokenType: 'Bearer', expiresIn: 900 },
+        },
+      });
+      expect(await second).toBe(true);
+      expect(authState.accessToken()).toBe('token-2');
+    });
+
     it('passes successful responses through untouched', async () => {
       const promise = authService.query<{ categories: unknown[] }>({
         query: '{ categories { id } }',
