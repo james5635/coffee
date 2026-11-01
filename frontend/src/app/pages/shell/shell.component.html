@@ -1,0 +1,19 @@
+<div class="flex min-h-dvh flex-col bg-stone-100">
+  <header class="bg-white shadow-sm ring-1 ring-stone-200">
+    <div class="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3">
+      <span class="text-lg font-semibold tracking-tight text-stone-900">Coffee Shop</span>
+      <button
+        type="button"
+        (click)="logout()"
+        class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        Log out
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto w-full max-w-4xl px-4 py-10">
+    <h1 class="text-2xl font-semibold tracking-tight text-stone-900">Welcome back</h1>
+    <p class="mt-2 text-sm text-stone-500">You are signed in. Product screens arrive in Phase 2.</p>
+  </main>
+</div>
