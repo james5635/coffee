@@ -7,12 +7,16 @@ import {
 } from './graphql.service';
 import { AuthStateService } from './auth-state.service';
 
+// `refreshToken` is selected only so the backend's cookie layer sees it in the
+// GraphQL response body and issues/rotates the HttpOnly refresh cookie. The
+// value is discarded client-side and never persisted (see design doc I1).
 const LOGIN_MUTATION = `
   mutation Login($email: String!, $password: String!) {
     login(email: $email, password: $password) {
       accessToken
       tokenType
       expiresIn
+      refreshToken
     }
   }
 `;
@@ -23,6 +27,7 @@ const REFRESH_MUTATION = `
       accessToken
       tokenType
       expiresIn
+      refreshToken
     }
   }
 `;
@@ -101,8 +106,8 @@ export class AuthService {
    * (design's trigger) or `UNAUTHENTICATED` while a token is held (what the
    * merged backend emits when an expired bearer passes through anonymously
    * with a refresh cookie present). `UNAUTHENTICATED` without a held token is
-   * a genuinely anonymous request and passes through untouched — boot-time
-   * silent refresh without a held token is out of phase-1 scope.
+   * a genuinely anonymous request and passes through untouched; boot-time
+   * session restore is handled explicitly by `restoreSession` at app start.
    */
   private isRefreshable<T>(response: GraphQLResponse<T>): boolean {
     if (hasGraphQLErrorCode(response, 'TOKEN_EXPIRED')) {
@@ -162,6 +167,23 @@ export class AuthService {
     } catch {
       this.authState.clearSession();
       return false;
+    }
+  }
+
+  /**
+   * Restores the session on app boot from the HttpOnly refresh cookie. The
+   * access token is memory-only, so a full page reload otherwise loses the
+   * session. Always settles the auth state's initialized signal, whether the
+   * silent refresh succeeds or not, so the guard can safely decide after this.
+   * Browser-only; the app initializer skips it during SSR.
+   */
+  async restoreSession(): Promise<void> {
+    try {
+      if (!this.authState.isAuthenticated()) {
+        await this.refreshSession();
+      }
+    } finally {
+      this.authState.markInitialized();
     }
   }
 

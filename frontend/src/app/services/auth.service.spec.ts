@@ -106,6 +106,122 @@ describe('AuthService', () => {
     expect(authState.isAuthenticated()).toBe(false);
   });
 
+  describe('mutation documents', () => {
+    it('selects the refreshToken field in the login mutation (backend cookie layer keys on it)', async () => {
+      const promise = authService.login('owner@coffee.local', 'password123');
+
+      const req = httpMock.expectOne('/query');
+      expect(req.request.body.query).toMatch(/login\([^)]*\)\s*\{[^}]*\brefreshToken\b[^}]*\}/);
+      req.flush({
+        data: {
+          login: {
+            accessToken: 'new-access-token',
+            tokenType: 'Bearer',
+            expiresIn: 900,
+            refreshToken: 'login-refresh-token',
+          },
+        },
+      });
+
+      await promise;
+    });
+
+    it('selects the nested refreshToken field in the refresh mutation (rotation must persist)', async () => {
+      const promise = authService.refreshSession();
+
+      const req = httpMock.expectOne('/query');
+      expect(req.request.body.query).toMatch(/refreshToken\s*\{[^}]*\brefreshToken\b[^}]*\}/);
+      req.flush({
+        data: {
+          refreshToken: {
+            accessToken: 'refreshed-token',
+            tokenType: 'Bearer',
+            expiresIn: 900,
+            refreshToken: 'rotated-refresh-token',
+          },
+        },
+      });
+
+      await promise;
+    });
+
+    it('discards the returned refresh token instead of persisting it client-side', async () => {
+      const promise = authService.login('owner@coffee.local', 'password123');
+
+      const req = httpMock.expectOne('/query');
+      req.flush({
+        data: {
+          login: {
+            accessToken: 'new-access-token',
+            tokenType: 'Bearer',
+            expiresIn: 900,
+            refreshToken: 'login-refresh-token',
+          },
+        },
+      });
+      await promise;
+
+      // Only the access token is retained; the refresh token travels solely
+      // via the HttpOnly cookie.
+      expect(authState.accessToken()).toBe('new-access-token');
+      expect(localStorage.length).toBe(0);
+      expect(sessionStorage.length).toBe(0);
+    });
+  });
+
+  describe('boot session restore', () => {
+    it('restores the session from the refresh cookie and marks initialized', async () => {
+      const promise = authService.restoreSession();
+
+      const req = httpMock.expectOne('/query');
+      expect(req.request.body.query).toContain('mutation RefreshToken');
+      // Cookie-only: no bearer header at boot even though a stale token might exist.
+      expect(req.request.headers.has('Authorization')).toBeFalsy();
+      req.flush({
+        data: {
+          refreshToken: {
+            accessToken: 'restored-token',
+            tokenType: 'Bearer',
+            expiresIn: 900,
+            refreshToken: 'rotated-refresh-token',
+          },
+        },
+      });
+
+      await promise;
+      expect(authState.accessToken()).toBe('restored-token');
+      expect(authState.isInitialized()).toBe(true);
+    });
+
+    it('stays unauthenticated and marks initialized when the refresh cookie is invalid', async () => {
+      const promise = authService.restoreSession();
+
+      const req = httpMock.expectOne('/query');
+      req.flush({
+        errors: [
+          {
+            message: 'The refresh token is invalid.',
+            extensions: { code: 'INVALID_REFRESH_TOKEN' },
+          },
+        ],
+      });
+
+      await promise;
+      expect(authState.isAuthenticated()).toBe(false);
+      expect(authState.isInitialized()).toBe(true);
+    });
+
+    it('skips the refresh when an access token is already held', async () => {
+      authState.setAccessToken('existing-token');
+
+      await authService.restoreSession();
+
+      expect(authState.accessToken()).toBe('existing-token');
+      expect(authState.isInitialized()).toBe(true);
+      // No request was issued (httpMock.verify() would fail otherwise).
+    });
+  });
+
   describe('query orchestration', () => {
     it('refreshes once and retries on TOKEN_EXPIRED, updating the token on success', async () => {
       authState.setAccessToken('expired-token');

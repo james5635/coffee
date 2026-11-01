@@ -3,13 +3,15 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthStateService } from '../services/auth-state.service';
 
 /**
- * Protects authenticated routes: with an in-memory access token held the
- * navigation proceeds; otherwise the user is redirected to `/login`. Silent
- * session restore from the HttpOnly refresh cookie is out of Phase 1 scope,
- * so a full page reload (which loses the in-memory token) lands on `/login`.
+ * Protects authenticated routes: the guard first waits for boot-time session
+ * restore (silent refresh from the HttpOnly cookie) to settle, then allows the
+ * navigation when an access token is held and redirects to `/login` otherwise.
+ * Waiting prevents a page reload with a valid refresh cookie from being
+ * bounced to `/login` before the restored token is available.
  */
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = async () => {
   const authState = inject(AuthStateService);
   const router = inject(Router);
+  await authState.whenInitialized();
   return authState.isAuthenticated() ? true : router.createUrlTree(['/login']);
 };
