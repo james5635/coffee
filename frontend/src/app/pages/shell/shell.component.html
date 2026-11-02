@@ -2,13 +2,21 @@
   <header class="bg-white shadow-sm ring-1 ring-stone-200">
     <div class="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3">
       <span class="text-lg font-semibold tracking-tight text-stone-900">Coffee Shop</span>
-      <button
-        type="button"
-        (click)="logout()"
-        class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-      >
-        Log out
-      </button>
+      <div class="flex items-center gap-2">
+        <a
+          routerLink="/menu"
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        >
+          View menu
+        </a>
+        <button
+          type="button"
+          (click)="logout()"
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        >
+          Log out
+        </button>
+      </div>
     </div>
   </header>
 

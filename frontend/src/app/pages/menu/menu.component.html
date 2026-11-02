@@ -1,0 +1,137 @@
+<main class="min-h-dvh bg-stone-100">
+  <header class="border-b border-stone-200 bg-white">
+    <div class="mx-auto flex w-full max-w-5xl items-start justify-between gap-4 px-4 py-6">
+      <div>
+        <p class="text-xs font-semibold tracking-[0.2em] text-amber-700 uppercase">Coffee Shop</p>
+        <h1 class="mt-1 text-3xl font-semibold tracking-tight text-stone-900">Menu</h1>
+        <p class="mt-1 text-sm text-stone-500">
+          Browse what is available today. Prices include any listed modifier extras.
+        </p>
+      </div>
+      <a
+        routerLink="/login"
+        class="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        Staff sign in
+      </a>
+    </div>
+  </header>
+
+  <div class="mx-auto w-full max-w-5xl px-4 py-8">
+    @if (loading()) {
+      <p
+        role="status"
+        class="rounded-xl bg-white px-4 py-3 text-sm text-stone-600 ring-1 ring-stone-200"
+      >
+        Loading menu…
+      </p>
+    } @else if (errorMessage(); as message) {
+      <div
+        role="alert"
+        class="flex flex-col items-start gap-3 rounded-xl bg-red-50 px-4 py-4 text-sm text-red-700 ring-1 ring-red-200"
+      >
+        <p>{{ message }}</p>
+        <button
+          type="button"
+          (click)="load()"
+          class="rounded-lg bg-red-700 px-3 py-1.5 font-medium text-white transition-colors hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+        >
+          Try again
+        </button>
+      </div>
+    } @else if (categories().length === 0 && products().length === 0) {
+      <p class="rounded-xl bg-white px-4 py-3 text-sm text-stone-600 ring-1 ring-stone-200">
+        No menu categories are available yet.
+      </p>
+    } @else {
+      <nav aria-label="Menu categories" class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          data-category-id="all"
+          [attr.aria-pressed]="selectedCategoryId() === null"
+          (click)="selectCategory(null)"
+          class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          [class.bg-amber-700]="selectedCategoryId() === null"
+          [class.text-white]="selectedCategoryId() === null"
+          [class.hover:bg-amber-600]="selectedCategoryId() === null"
+          [class.bg-white]="selectedCategoryId() !== null"
+          [class.text-stone-700]="selectedCategoryId() !== null"
+          [class.ring-1]="selectedCategoryId() !== null"
+          [class.ring-stone-300]="selectedCategoryId() !== null"
+          [class.hover:bg-stone-50]="selectedCategoryId() !== null"
+        >
+          All items
+        </button>
+
+        @for (category of categories(); track category.id) {
+          <button
+            type="button"
+            [attr.data-category-id]="category.id"
+            [attr.aria-pressed]="selectedCategoryId() === category.id"
+            (click)="selectCategory(category.id)"
+            class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+            [class.bg-amber-700]="selectedCategoryId() === category.id"
+            [class.text-white]="selectedCategoryId() === category.id"
+            [class.hover:bg-amber-600]="selectedCategoryId() === category.id"
+            [class.bg-white]="selectedCategoryId() !== category.id"
+            [class.text-stone-700]="selectedCategoryId() !== category.id"
+            [class.ring-1]="selectedCategoryId() !== category.id"
+            [class.ring-stone-300]="selectedCategoryId() !== category.id"
+            [class.hover:bg-stone-50]="selectedCategoryId() !== category.id"
+          >
+            {{ category.name }}
+          </button>
+        }
+      </nav>
+
+      @if (selectedCategory(); as category) {
+        @if (category.description) {
+          <p class="mt-4 text-sm text-stone-500">{{ category.description }}</p>
+        }
+      }
+
+      @if (visibleProducts().length === 0) {
+        <p class="mt-6 rounded-xl bg-white px-4 py-3 text-sm text-stone-600 ring-1 ring-stone-200">
+          No items in this category.
+        </p>
+      } @else {
+        <ul class="mt-6 space-y-4">
+          @for (product of visibleProducts(); track product.id) {
+            <li>
+              <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <h2 class="text-lg font-semibold text-stone-900">{{ product.name }}</h2>
+                    <p class="mt-1 text-sm text-stone-500">{{ product.description }}</p>
+                  </div>
+                  <p class="shrink-0 text-lg font-semibold text-stone-900">
+                    {{ product.priceLabel }}
+                  </p>
+                </div>
+
+                @for (group of product.modifierGroups; track group.id) {
+                  <section class="mt-4 border-t border-stone-100 pt-3">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 class="text-sm font-semibold text-stone-800">{{ group.name }}</h3>
+                      <span class="text-xs font-medium text-stone-500">{{ group.ruleLabel }}</span>
+                    </div>
+                    <ul class="mt-2 divide-y divide-stone-100">
+                      @for (modifier of group.modifiers; track modifier.id) {
+                        <li class="flex items-center justify-between gap-4 py-1.5 text-sm">
+                          <span class="text-stone-700">{{ modifier.name }}</span>
+                          @if (modifier.priceDeltaLabel) {
+                            <span class="text-stone-500">{{ modifier.priceDeltaLabel }}</span>
+                          }
+                        </li>
+                      }
+                    </ul>
+                  </section>
+                }
+              </article>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</main>
