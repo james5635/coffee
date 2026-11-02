@@ -7,7 +7,9 @@ import type { CodegenConfig } from '@graphql-codegen/cli';
  * under `src/graphql/operations/` and the generated service/document types are
  * consumed by the Apollo-backed `GraphQLService` and product screens.
  *
- * Run with `npm run codegen` (or `npm run codegen:watch`).
+ * Run with `npm run codegen` (or `npm run codegen:watch`). `npm run codegen:check`
+ * verifies the committed output is current (dry run, no writes); it also runs
+ * automatically as the `pretest` step so stale output fails `npm test`.
  */
 const config: CodegenConfig = {
   schema: '../backend/graph/schema.graphqls',

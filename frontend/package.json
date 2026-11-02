@@ -6,9 +6,11 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "pretest": "npm run codegen:check",
     "test": "ng test",
     "codegen": "graphql-codegen --config codegen.ts",
     "codegen:watch": "graphql-codegen --config codegen.ts --watch",
+    "codegen:check": "graphql-codegen --config codegen.ts --check",
     "serve:ssr:frontend": "node dist/frontend/server/server.mjs"
   },
   "private": true,
