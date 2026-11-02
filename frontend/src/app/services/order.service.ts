@@ -2,6 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import {
   AdvanceOrderStatusDocument,
   AdvanceOrderStatusMutation,
+  IssueRefundDocument,
+  IssueRefundMutation,
   OrderDocument,
   OrderQuery,
   PlaceOrderDocument,
@@ -14,6 +16,7 @@ import {
   RecordPaymentMutation,
 } from '../../graphql/generated/graphql';
 import type {
+  IssueRefundInput,
   Order,
   OrderStatus,
   Payment,
@@ -84,6 +87,19 @@ export class OrderService {
       variables: { input },
     });
     return this.unwrap(response, response.data?.recordPayment, 'record the payment');
+  }
+
+  /**
+   * Issues a staff refund against an order's recorded payments. The backend
+   * requires `payment.refund` and enforces the refundable balance, surfacing
+   * `INSUFFICIENT_BALANCE` when the amount exceeds what was collected.
+   */
+  async issueRefund(input: IssueRefundInput): Promise<Payment> {
+    const response = await this.auth.query<IssueRefundMutation>({
+      query: IssueRefundDocument,
+      variables: { input },
+    });
+    return this.unwrap(response, response.data?.issueRefund, 'issue the refund');
   }
 
   /**

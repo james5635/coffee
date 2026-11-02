@@ -6,6 +6,7 @@ import { Order, OrderStatus, OrderType } from '../../../graphql/generated/schema
 import { AuthStateService } from '../../services/auth-state.service';
 import { OrderError, OrderService } from '../../services/order.service';
 import { formatMoney } from '../../utils/money';
+import { productErrorMessage } from '../../utils/product-errors';
 
 /** One line in a prep-queue order, flattened for display. */
 interface PrepOrderItemView {
@@ -116,60 +117,47 @@ function toPrepOrderView(
   };
 }
 
+const QUEUE_ERRORS = {
+  codes: {
+    FORBIDDEN: 'Your role cannot view the preparation queue.',
+  },
+  auth: 'Your session ended. Sign in again to view the prep queue.',
+  unknown: 'We could not load the prep queue. Please try again.',
+  offline: 'We could not load the prep queue. Check your connection and try again.',
+} as const;
+
+const TRANSITION_ERRORS = {
+  codes: {
+    INVALID_STATE: 'This order has already moved on. The queue has been refreshed.',
+    FORBIDDEN: 'Your role cannot update this order.',
+    NOT_FOUND: 'That order no longer exists.',
+    BAD_USER_INPUT: 'That status change is not valid for this order.',
+  },
+  auth: 'Your session ended. Sign in again to update orders.',
+  unknown: 'We could not update the order. Please try again.',
+  offline: 'We could not update the order. Check your connection and try again.',
+} as const;
+
+const LOOKUP_ERRORS = {
+  codes: {
+    NOT_FOUND: 'No order found with that ID.',
+    FORBIDDEN: 'Your role cannot view that order.',
+  },
+  auth: 'Your session ended. Sign in again to look up orders.',
+  unknown: 'We could not load that order. Please try again.',
+  offline: 'We could not load that order. Check your connection and try again.',
+} as const;
+
 function queueErrorMessage(error: unknown): string {
-  if (error instanceof OrderError) {
-    switch (error.code) {
-      case 'FORBIDDEN':
-        return 'Your role cannot view the preparation queue.';
-      case 'UNAUTHENTICATED':
-      case 'TOKEN_EXPIRED':
-      case 'INVALID_REFRESH_TOKEN':
-        return 'Your session ended. Sign in again to view the prep queue.';
-      default:
-        return 'We could not load the prep queue. Please try again.';
-    }
-  }
-  return 'We could not load the prep queue. Check your connection and try again.';
+  return productErrorMessage(error, QUEUE_ERRORS);
 }
 
 function transitionErrorMessage(error: unknown): string {
-  if (error instanceof OrderError) {
-    switch (error.code) {
-      case 'INVALID_STATE':
-        return 'This order has already moved on. The queue has been refreshed.';
-      case 'FORBIDDEN':
-        return 'Your role cannot update this order.';
-      case 'NOT_FOUND':
-        return 'That order no longer exists.';
-      case 'BAD_USER_INPUT':
-        return 'That status change is not valid for this order.';
-      case 'UNAUTHENTICATED':
-      case 'TOKEN_EXPIRED':
-      case 'INVALID_REFRESH_TOKEN':
-        return 'Your session ended. Sign in again to update orders.';
-      default:
-        return 'We could not update the order. Please try again.';
-    }
-  }
-  return 'We could not update the order. Check your connection and try again.';
+  return productErrorMessage(error, TRANSITION_ERRORS);
 }
 
 function lookupErrorMessage(error: unknown): string {
-  if (error instanceof OrderError) {
-    switch (error.code) {
-      case 'NOT_FOUND':
-        return 'No order found with that ID.';
-      case 'FORBIDDEN':
-        return 'Your role cannot view that order.';
-      case 'UNAUTHENTICATED':
-      case 'TOKEN_EXPIRED':
-      case 'INVALID_REFRESH_TOKEN':
-        return 'Your session ended. Sign in again to look up orders.';
-      default:
-        return 'We could not load that order. Please try again.';
-    }
-  }
-  return 'We could not load that order. Check your connection and try again.';
+  return productErrorMessage(error, LOOKUP_ERRORS);
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   PaymentMethod,
   PaymentStatus,
   PlaceOrderInput,
+  IssueRefundInput,
   RecordPaymentInput,
 } from '../../graphql/generated/schema';
 import {
@@ -18,6 +19,8 @@ import {
   PreparationQueueQuery,
   ProductsDocument,
   ProductsQuery,
+  IssueRefundDocument,
+  IssueRefundMutation,
   RecordPaymentDocument,
   RecordPaymentMutation,
 } from '../../graphql/generated/graphql';
@@ -251,4 +254,46 @@ describe('OrderService', () => {
       }),
     ).rejects.toMatchObject({ name: 'OrderError', code: 'INSUFFICIENT_BALANCE' });
   });
+
+  it('issues a refund through the generated document and returns the payment', async () => {
+    const refund: IssueRefundMutation['issueRefund'] = {
+      ...payment,
+      id: 'refund-1',
+      kind: PaymentKind.Refund,
+      amount: '1.50',
+      externalReference: 'REF-1',
+    };
+    authService.query.mockResolvedValue({ data: { issueRefund: refund } });
+    const input: IssueRefundInput = {
+      orderId: 'order-1',
+      method: PaymentMethod.Card,
+      amount: '1.50',
+      externalReference: 'REF-1',
+    };
+
+    const result = await service.issueRefund(input);
+
+    expect(result).toEqual(refund);
+    expect(authService.query).toHaveBeenCalledWith({
+      query: IssueRefundDocument,
+      variables: { input },
+    });
+  });
+
+  it.each(['INSUFFICIENT_BALANCE', 'INVALID_STATE', 'FORBIDDEN', 'NOT_FOUND'])(
+    'maps %s from issueRefund to an OrderError',
+    async (code) => {
+      authService.query.mockResolvedValue({
+        errors: [{ message: 'refund rejected', extensions: { code } }],
+      });
+
+      await expect(
+        service.issueRefund({
+          orderId: 'order-1',
+          method: PaymentMethod.Cash,
+          amount: '9.00',
+        }),
+      ).rejects.toMatchObject({ name: 'OrderError', code });
+    },
+  );
 });

@@ -77,3 +77,16 @@ mutation RecordPayment($input: RecordPaymentInput!) {
     settledAt
   }
 }
+
+mutation IssueRefund($input: IssueRefundInput!) {
+  issueRefund(input: $input) {
+    id
+    kind
+    status
+    method
+    amount
+    externalReference
+    createdAt
+    settledAt
+  }
+}

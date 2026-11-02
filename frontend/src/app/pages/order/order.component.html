@@ -57,6 +57,10 @@
           <p class="text-base font-semibold">{{ order.paymentStatusLabel }}</p>
           <p class="mt-1">{{ order.paymentNote }}</p>
         </div>
+        <p data-tracking-note class="mt-2 text-xs text-stone-500">
+          Keep this order number. There is no live tracking page yet — staff will call your order
+          when it is ready.
+        </p>
 
         <h3 class="mt-6 text-sm font-semibold tracking-wide text-stone-800 uppercase">Items</h3>
         <ul data-confirmation-items class="mt-2 divide-y divide-stone-100">
@@ -96,7 +100,7 @@
             @for (payment of order.payments; track payment.id) {
               <li class="flex justify-between gap-4 py-2 text-sm">
                 <span class="text-stone-600">
-                  {{ payment.kind === 'REFUND' ? 'Refund' : 'Payment' }} ·
+                  {{ payment.kindLabel }} ·
                   {{ payment.methodLabel }}
                 </span>
                 <span class="text-stone-700">{{ payment.amountLabel }}</span>

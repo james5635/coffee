@@ -1,0 +1,408 @@
+<main class="min-h-dvh bg-stone-100">
+  <header class="border-b border-stone-200 bg-white">
+    <div class="mx-auto flex w-full max-w-5xl items-start justify-between gap-4 px-4 py-6">
+      <div>
+        <p class="text-xs font-semibold tracking-[0.2em] text-amber-700 uppercase">Coffee Shop</p>
+        <h1 class="mt-1 text-3xl font-semibold tracking-tight text-stone-900">
+          Payments &amp; refunds
+        </h1>
+        <p class="mt-1 text-sm text-stone-500">
+          Look up an order, record counter payments, and issue authorized refunds.
+        </p>
+      </div>
+      <a
+        routerLink="/menu"
+        class="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        View menu
+      </a>
+    </div>
+  </header>
+
+  <div class="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
+    @if (!hasPaymentAccess()) {
+      <section
+        data-no-payment-permission
+        class="rounded-2xl bg-white p-6 text-sm text-stone-600 shadow-sm ring-1 ring-stone-200"
+      >
+        <h2 class="text-lg font-semibold text-stone-900">Payments unavailable</h2>
+        <p class="mt-1">You do not have permission to record payments or issue refunds.</p>
+      </section>
+    } @else {
+      <section
+        aria-labelledby="lookup-heading"
+        class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200"
+      >
+        <h2 id="lookup-heading" class="text-lg font-semibold text-stone-900">Find an order</h2>
+        <p class="mt-1 text-sm text-stone-500">
+          Staff can only look up an order by ID. The backend does not expose a shop-wide order or
+          payment list.
+        </p>
+
+        <form
+          class="mt-4 flex flex-wrap items-end gap-3"
+          [formGroup]="orderForm"
+          (ngSubmit)="lookUpOrder()"
+          data-order-lookup-form
+        >
+          <label class="flex min-w-56 flex-1 flex-col gap-1 text-sm font-medium text-stone-700">
+            Order ID
+            <input
+              type="text"
+              name="orderId"
+              data-order-id
+              formControlName="orderId"
+              autocomplete="off"
+              class="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-600 focus:ring-2 focus:ring-amber-200 focus:outline-none"
+            />
+          </label>
+          <button
+            type="submit"
+            data-lookup-order
+            [disabled]="lookupSubmitting()"
+            class="rounded-lg bg-stone-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-800"
+          >
+            {{ lookupSubmitting() ? 'Looking up…' : 'Look up order' }}
+          </button>
+        </form>
+
+        @if (lookupError(); as message) {
+          <p
+            role="alert"
+            data-lookup-error
+            class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+          >
+            {{ message }}
+          </p>
+        }
+      </section>
+
+      @if (order(); as current) {
+        <section
+          data-order-summary
+          aria-labelledby="summary-heading"
+          class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200"
+        >
+          <div class="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 id="summary-heading" class="text-lg font-semibold text-stone-900">
+              Order #{{ current.orderNumber }}
+            </h2>
+            <span
+              data-order-status
+              class="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-700"
+            >
+              {{ current.statusLabel }}
+            </span>
+          </div>
+          @if (current.customerName) {
+            <p class="mt-1 text-sm text-stone-500">{{ current.customerName }}</p>
+          }
+
+          <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-4">
+            <div data-summary-total class="rounded-xl bg-stone-50 px-4 py-3 ring-1 ring-stone-200">
+              <dt class="text-stone-500">Order total</dt>
+              <dd class="mt-1 text-base font-semibold text-stone-900">{{ current.totalLabel }}</dd>
+            </div>
+            <div data-summary-paid class="rounded-xl bg-stone-50 px-4 py-3 ring-1 ring-stone-200">
+              <dt class="text-stone-500">Paid</dt>
+              <dd class="mt-1 text-base font-semibold text-stone-900">{{ current.paidLabel }}</dd>
+            </div>
+            <div
+              data-summary-refunded
+              class="rounded-xl bg-stone-50 px-4 py-3 ring-1 ring-stone-200"
+            >
+              <dt class="text-stone-500">Refunded</dt>
+              <dd class="mt-1 text-base font-semibold text-stone-900">
+                {{ current.refundedLabel }}
+              </dd>
+            </div>
+            <div
+              data-summary-balance
+              class="rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200"
+            >
+              <dt class="text-amber-800">Balance due</dt>
+              <dd class="mt-1 text-base font-semibold text-amber-900">
+                {{ current.balanceLabel }}
+              </dd>
+            </div>
+          </dl>
+
+          <h3 class="mt-6 text-sm font-semibold tracking-wide text-stone-800 uppercase">
+            Payment history
+          </h3>
+          @if (current.payments.length === 0) {
+            <p data-payment-history class="mt-2 text-sm text-stone-500">
+              No payments have been recorded for this order.
+            </p>
+          } @else {
+            <ul data-payment-history class="mt-2 divide-y divide-stone-100">
+              @for (payment of current.payments; track payment.id) {
+                <li class="flex flex-wrap items-baseline justify-between gap-2 py-2 text-sm">
+                  <span class="text-stone-700">
+                    <span class="font-medium text-stone-900">{{ payment.kindLabel }}</span>
+                    · {{ payment.methodLabel }} · {{ payment.statusLabel }}
+                    @if (payment.reference) {
+                      <span class="text-stone-500">· {{ payment.reference }}</span>
+                    }
+                  </span>
+                  <span class="font-medium text-stone-900">{{ payment.amountLabel }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+
+      @if (canAcceptPayments()) {
+        <section
+          data-payment-panel
+          aria-labelledby="payment-heading"
+          class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200"
+        >
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="payment-heading" class="text-lg font-semibold text-stone-900">
+              Record payment
+            </h2>
+            <p class="text-xs text-stone-500">
+              Requires the server-side `payment.accept` permission.
+            </p>
+          </div>
+
+          @if (paymentError(); as message) {
+            <p
+              role="alert"
+              data-payment-error
+              class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+            >
+              {{ message }}
+            </p>
+          }
+          @if (paymentSuccess(); as message) {
+            <p
+              role="status"
+              data-payment-success
+              class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200"
+            >
+              {{ message }}
+            </p>
+          }
+
+          @if (order(); as current) {
+            @if (current.canRecordPayment) {
+              <form
+                class="mt-4 grid gap-4 sm:grid-cols-2"
+                [formGroup]="paymentForm"
+                (ngSubmit)="recordPayment()"
+                data-payment-form
+              >
+                <div>
+                  <label for="payment-method" class="block text-sm font-medium text-stone-700">
+                    Method
+                  </label>
+                  <select
+                    id="payment-method"
+                    data-payment-method
+                    formControlName="method"
+                    class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                  >
+                    @for (method of paymentMethods; track method.value) {
+                      <option [value]="method.value">{{ method.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div>
+                  <label for="payment-amount" class="block text-sm font-medium text-stone-700">
+                    Amount
+                  </label>
+                  <input
+                    id="payment-amount"
+                    data-payment-amount
+                    formControlName="amount"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                    placeholder="0.00"
+                  />
+                  <p class="mt-1 text-xs text-stone-500">Balance due: {{ current.balanceLabel }}</p>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label for="payment-reference" class="block text-sm font-medium text-stone-700">
+                    External reference <span class="font-normal text-stone-400">(optional)</span>
+                  </label>
+                  <input
+                    id="payment-reference"
+                    data-payment-reference
+                    formControlName="externalReference"
+                    autocomplete="off"
+                    class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                    placeholder="Card terminal reference"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  data-record-payment
+                  [disabled]="paymentSubmitting()"
+                  class="rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 sm:col-span-2"
+                >
+                  {{ paymentSubmitting() ? 'Recording…' : 'Record payment' }}
+                </button>
+              </form>
+            } @else {
+              <p
+                data-payment-blocked
+                class="mt-4 rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-600 ring-1 ring-stone-200"
+              >
+                {{ current.paymentBlockedReason }}
+              </p>
+            }
+          } @else {
+            <p class="mt-4 text-sm text-stone-500">
+              Look up an order above to record a payment against its balance.
+            </p>
+          }
+        </section>
+      }
+
+      @if (canIssueRefunds()) {
+        <section
+          data-refund-panel
+          aria-labelledby="refund-heading"
+          class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200"
+        >
+          <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="refund-heading" class="text-lg font-semibold text-stone-900">Issue refund</h2>
+            <p class="text-xs text-stone-500">
+              Requires the server-side `payment.refund` permission.
+            </p>
+          </div>
+
+          @if (refundError(); as message) {
+            <p
+              role="alert"
+              data-refund-error
+              class="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+            >
+              {{ message }}
+            </p>
+          }
+          @if (refundSuccess(); as message) {
+            <p
+              role="status"
+              data-refund-success
+              class="mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200"
+            >
+              {{ message }}
+            </p>
+          }
+
+          @if (order(); as current) {
+            @if (current.canRefund) {
+              <form
+                class="mt-4 grid gap-4 sm:grid-cols-2"
+                [formGroup]="refundForm"
+                (ngSubmit)="issueRefund()"
+                data-refund-form
+              >
+                <div>
+                  <label for="refund-method" class="block text-sm font-medium text-stone-700">
+                    Method
+                  </label>
+                  <select
+                    id="refund-method"
+                    data-refund-method
+                    formControlName="method"
+                    class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                  >
+                    @for (method of paymentMethods; track method.value) {
+                      <option [value]="method.value">{{ method.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div>
+                  <label for="refund-amount" class="block text-sm font-medium text-stone-700">
+                    Amount
+                  </label>
+                  <input
+                    id="refund-amount"
+                    data-refund-amount
+                    formControlName="amount"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                    placeholder="0.00"
+                  />
+                  <p class="mt-1 text-xs text-stone-500">
+                    Refundable: {{ formatCents(current.refundableCents) }}
+                  </p>
+                </div>
+
+                <div class="sm:col-span-2">
+                  <label for="refund-reference" class="block text-sm font-medium text-stone-700">
+                    External reference <span class="font-normal text-stone-400">(optional)</span>
+                  </label>
+                  <input
+                    id="refund-reference"
+                    data-refund-reference
+                    formControlName="externalReference"
+                    autocomplete="off"
+                    class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                    placeholder="Refund reference"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  data-issue-refund
+                  [disabled]="refundSubmitting()"
+                  class="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 sm:col-span-2"
+                >
+                  {{ refundSubmitting() ? 'Issuing…' : 'Issue refund' }}
+                </button>
+              </form>
+            } @else {
+              <p
+                data-refund-blocked
+                class="mt-4 rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-600 ring-1 ring-stone-200"
+              >
+                {{ current.refundBlockedReason }}
+              </p>
+            }
+          } @else {
+            <p class="mt-4 text-sm text-stone-500">
+              Look up an order above to refund a payment already collected on it.
+            </p>
+          }
+        </section>
+      }
+
+      <section
+        data-workflow-limits
+        aria-labelledby="limits-heading"
+        class="rounded-2xl bg-stone-50 p-6 text-sm text-stone-600 ring-1 ring-stone-200"
+      >
+        <h2
+          id="limits-heading"
+          class="text-sm font-semibold tracking-wide text-stone-800 uppercase"
+        >
+          Known limitations
+        </h2>
+        <ul class="mt-2 list-disc space-y-1 pl-5">
+          <li>Staff can only look up an order by ID; there is no shop-wide payment list.</li>
+          <li>
+            The backend has no completed-orders query, so completed orders cannot be discovered
+            here; refunds are limited to orders you can look up.
+          </li>
+          <li>
+            A refund is recorded against one order and cannot exceed the amount collected on it;
+            there is no separate refund-approval workflow.
+          </li>
+          <li>Only pending or accepted orders accept payments, matching backend rules.</li>
+        </ul>
+      </section>
+    }
+  </div>
+</main>

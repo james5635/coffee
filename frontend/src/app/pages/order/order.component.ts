@@ -6,19 +6,19 @@ import {
   Order,
   OrderStatus,
   OrderType,
-  PaymentKind,
   PaymentMethod,
-  PaymentStatus,
   PlaceOrderInput,
 } from '../../../graphql/generated/schema';
 import { AuthStateService } from '../../services/auth-state.service';
-import { OrderError, OrderService } from '../../services/order.service';
+import { OrderService } from '../../services/order.service';
 import {
   centsToDecimalString,
   formatCents,
   formatMoney,
   parseDecimalToCents,
 } from '../../utils/money';
+import { paymentKindLabel, paymentMethodLabel, summarizePayments } from '../../utils/payments';
+import { productErrorMessage } from '../../utils/product-errors';
 
 /** One modifier option as rendered in the order builder. */
 interface OrderModifierView {
@@ -85,7 +85,7 @@ interface PlacedOrderView {
   }[];
   payments: {
     id: string;
-    kind: string;
+    kindLabel: string;
     methodLabel: string;
     amountLabel: string;
   }[];
@@ -164,21 +164,6 @@ function orderTypeLabel(type: OrderType): string {
   }
 }
 
-function paymentMethodLabel(method: PaymentMethod): string {
-  switch (method) {
-    case PaymentMethod.Cash:
-      return 'Cash';
-    case PaymentMethod.Card:
-      return 'Card';
-    case PaymentMethod.Online:
-      return 'Online';
-    case PaymentMethod.Other:
-      return 'Other';
-    default:
-      return method;
-  }
-}
-
 function toProductView(product: ProductsQuery['products'][number]): OrderProductView {
   return {
     id: product.id,
@@ -210,24 +195,15 @@ function toProductView(product: ProductsQuery['products'][number]): OrderProduct
  */
 function toPlacedOrderView(order: Order): PlacedOrderView {
   const totalCents = moneyToCents(order.total);
-  const paidCents = order.payments
-    .filter((payment) => payment.status === PaymentStatus.Succeeded)
-    .reduce(
-      (sum, payment) =>
-        sum +
-        (payment.kind === PaymentKind.Refund
-          ? -moneyToCents(payment.amount)
-          : moneyToCents(payment.amount)),
-      0,
-    );
-  const balanceCents = Math.max(totalCents - paidCents, 0);
+  const summary = summarizePayments(totalCents, order.payments);
+  const balanceCents = summary.balanceCents;
 
   let paymentStatusLabel: string;
   let paymentNote: string;
   if (balanceCents === 0) {
     paymentStatusLabel = 'Paid in full';
     paymentNote = 'This order is settled. Thank you!';
-  } else if (paidCents > 0) {
+  } else if (summary.netCents > 0) {
     paymentStatusLabel = `Payment due: ${formatCents(balanceCents)}`;
     paymentNote = 'Staff will collect the remaining balance at the counter.';
   } else {
@@ -245,7 +221,7 @@ function toPlacedOrderView(order: Order): PlacedOrderView {
     subtotalLabel: formatMoney(order.subtotal),
     taxLabel: formatMoney(order.taxAmount),
     totalLabel: formatMoney(order.total),
-    paidCents,
+    paidCents: summary.netCents,
     balanceCents,
     paymentStatusLabel,
     paymentNote,
@@ -258,71 +234,56 @@ function toPlacedOrderView(order: Order): PlacedOrderView {
     })),
     payments: order.payments.map((payment) => ({
       id: payment.id,
-      kind: payment.kind,
+      kindLabel: paymentKindLabel(payment.kind),
       methodLabel: paymentMethodLabel(payment.method),
       amountLabel: formatMoney(payment.amount),
     })),
   };
 }
 
+const PLACE_ORDER_ERRORS = {
+  codes: {
+    BAD_USER_INPUT: 'Some items are unavailable or invalid. Please review your order.',
+    FORBIDDEN: 'You do not have permission to place this order.',
+  },
+  auth: 'Your session ended. Sign in again or continue as a guest.',
+  unknown: 'We could not place your order. Please try again.',
+  offline: 'We could not place your order. Check your connection and try again.',
+} as const;
+
+const ORDER_LOOKUP_ERRORS = {
+  codes: {
+    NOT_FOUND: 'No order found with that ID.',
+    FORBIDDEN: 'Your role cannot view that order.',
+  },
+  auth: 'Sign in to look up orders.',
+  unknown: 'We could not load that order. Please try again.',
+  offline: 'We could not load that order. Check your connection and try again.',
+} as const;
+
+const PAYMENT_ERRORS = {
+  codes: {
+    INSUFFICIENT_BALANCE: 'That amount exceeds the outstanding balance for this order.',
+    INVALID_STATE: 'This order is not awaiting payment.',
+    FORBIDDEN: 'Your role cannot record payments.',
+    NOT_FOUND: 'No order found with that ID.',
+    BAD_USER_INPUT: 'Check the payment amount and method, then try again.',
+  },
+  auth: 'Sign in to record payments.',
+  unknown: 'We could not record the payment. Please try again.',
+  offline: 'We could not record the payment. Check your connection and try again.',
+} as const;
+
 function placeOrderErrorMessage(error: unknown): string {
-  if (error instanceof OrderError) {
-    switch (error.code) {
-      case 'BAD_USER_INPUT':
-        return 'Some items are unavailable or invalid. Please review your order.';
-      case 'FORBIDDEN':
-        return 'You do not have permission to place this order.';
-      case 'UNAUTHENTICATED':
-      case 'TOKEN_EXPIRED':
-      case 'INVALID_REFRESH_TOKEN':
-        return 'Your session ended. Sign in again or continue as a guest.';
-      default:
-        return 'We could not place your order. Please try again.';
-    }
-  }
-  return 'We could not place your order. Check your connection and try again.';
+  return productErrorMessage(error, PLACE_ORDER_ERRORS);
 }
 
 function orderLookupErrorMessage(error: unknown): string {
-  if (error instanceof OrderError) {
-    switch (error.code) {
-      case 'NOT_FOUND':
-        return 'No order found with that ID.';
-      case 'FORBIDDEN':
-        return 'Your role cannot view that order.';
-      case 'UNAUTHENTICATED':
-      case 'TOKEN_EXPIRED':
-      case 'INVALID_REFRESH_TOKEN':
-        return 'Sign in to look up orders.';
-      default:
-        return 'We could not load that order. Please try again.';
-    }
-  }
-  return 'We could not load that order. Check your connection and try again.';
+  return productErrorMessage(error, ORDER_LOOKUP_ERRORS);
 }
 
 function paymentErrorMessage(error: unknown): string {
-  if (error instanceof OrderError) {
-    switch (error.code) {
-      case 'INSUFFICIENT_BALANCE':
-        return 'That amount exceeds the outstanding balance for this order.';
-      case 'INVALID_STATE':
-        return 'This order is not awaiting payment.';
-      case 'FORBIDDEN':
-        return 'Your role cannot record payments.';
-      case 'NOT_FOUND':
-        return 'No order found with that ID.';
-      case 'BAD_USER_INPUT':
-        return 'Check the payment amount and method, then try again.';
-      case 'UNAUTHENTICATED':
-      case 'TOKEN_EXPIRED':
-      case 'INVALID_REFRESH_TOKEN':
-        return 'Sign in to record payments.';
-      default:
-        return 'We could not record the payment. Please try again.';
-    }
-  }
-  return 'We could not record the payment. Check your connection and try again.';
+  return productErrorMessage(error, PAYMENT_ERRORS);
 }
 
 /**
