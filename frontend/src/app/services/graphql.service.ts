@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Apollo, gql } from 'apollo-angular';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import type { DocumentNode } from 'graphql';
 import { firstValueFrom } from 'rxjs';
-import { AuthStateService } from './auth-state.service';
 
 /** One GraphQL error; the backend carries the error code in `extensions.code`. */
 export interface GraphQLError {
@@ -17,7 +18,8 @@ export interface GraphQLResponse<T> {
 }
 
 export interface GraphQLRequest {
-  query: string;
+  /** A codegen-produced typed document, or a raw operation string. */
+  query: DocumentNode | string;
   variables?: Record<string, unknown>;
 }
 
@@ -36,25 +38,72 @@ export function hasGraphQLErrorCode<T>(response: GraphQLResponse<T>, code: strin
   return (response.errors ?? []).some((error) => graphQLErrorCode(error) === code);
 }
 
+/** Maps Apollo's combined GraphQL errors back to the backend's wire shape. */
+function toGraphQLErrors(error: unknown): GraphQLError[] | undefined {
+  if (!error) {
+    return undefined;
+  }
+  if (CombinedGraphQLErrors.is(error)) {
+    return error.errors.map((graphQLError) => {
+      const extensions = graphQLError.extensions as { code?: unknown } | undefined;
+      return {
+        message: graphQLError.message,
+        extensions: typeof extensions?.code === 'string' ? { code: extensions.code } : undefined,
+      };
+    });
+  }
+  return [{ message: error instanceof Error ? error.message : String(error) }];
+}
+
+/** Operation type of a document, defaulting to `query` for anonymous shorthand. */
+function operationType(document: DocumentNode): 'query' | 'mutation' | 'subscription' {
+  for (const definition of document.definitions) {
+    if (definition.kind === 'OperationDefinition') {
+      return definition.operation;
+    }
+  }
+  return 'query';
+}
+
 /**
- * Minimal GraphQL client: POSTs operations to `/query`, attaching the
- * in-memory access token as a bearer header and always sending cookies so the
- * HttpOnly refresh-token cookie reaches the backend (via the dev proxy).
+ * Apollo-backed GraphQL transport for the backend's `/query` endpoint.
+ *
+ * Operations execute through the app's Apollo client (see `provideAppApollo`):
+ * the link chain attaches the in-memory access token from `AuthStateService`
+ * and always sends cookies so the HttpOnly refresh token reaches the backend
+ * (via the dev proxy). GraphQL errors are returned in the backend's wire shape
+ * (`errors[].extensions.code`) rather than thrown; network/transport failures
+ * still reject so callers can distinguish them.
  */
 @Injectable({ providedIn: 'root' })
 export class GraphQLService {
-  private readonly http = inject(HttpClient);
-  private readonly authState = inject(AuthStateService);
+  private readonly apollo = inject(Apollo);
 
-  query<T>(req: GraphQLRequest, options?: QueryOptions): Promise<GraphQLResponse<T>> {
-    const token = options?.skipAuth ? null : this.authState.accessToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+  async query<T>(req: GraphQLRequest, options?: QueryOptions): Promise<GraphQLResponse<T>> {
+    const document = typeof req.query === 'string' ? gql(req.query) : req.query;
+    const common = {
+      variables: req.variables,
+      // Preserve the Phase 1 contract: every call goes to the network and
+      // responses are never served from (or written to) the cache.
+      fetchPolicy: 'no-cache' as const,
+      // Return GraphQL errors alongside data instead of throwing, so callers
+      // keep inspecting `errors[].extensions.code` (auth refresh orchestration).
+      errorPolicy: 'all' as const,
+      context: { skipAuth: options?.skipAuth ?? false },
+    };
+
+    const result =
+      operationType(document) === 'mutation'
+        ? await firstValueFrom(this.apollo.mutate<T>({ mutation: document, ...common }))
+        : await firstValueFrom(this.apollo.query<T>({ query: document, ...common }));
+
+    if (result.error && !CombinedGraphQLErrors.is(result.error)) {
+      throw result.error;
     }
 
-    return firstValueFrom(
-      this.http.post<GraphQLResponse<T>>('/query', req, { headers, withCredentials: true }),
-    );
+    return {
+      data: result.data as T | undefined,
+      errors: toGraphQLErrors(result.error),
+    };
   }
 }

@@ -1,54 +1,21 @@
 import { Injectable, inject } from '@angular/core';
 import {
+  LoginDocument,
+  LoginMutation,
+  LoginMutationVariables,
+  LogoutDocument,
+  LogoutMutation,
+  RefreshTokenDocument,
+  RefreshTokenMutation,
+} from '../../graphql/generated/graphql';
+import {
+  GraphQLRequest,
   GraphQLResponse,
   GraphQLService,
   graphQLErrorCode,
   hasGraphQLErrorCode,
 } from './graphql.service';
 import { AuthStateService } from './auth-state.service';
-
-// `refreshToken` is selected only so the backend's cookie layer sees it in the
-// GraphQL response body and issues/rotates the HttpOnly refresh cookie. The
-// value is discarded client-side and never persisted (see design doc I1).
-const LOGIN_MUTATION = `
-  mutation Login($email: String!, $password: String!) {
-    login(email: $email, password: $password) {
-      accessToken
-      tokenType
-      expiresIn
-      refreshToken
-    }
-  }
-`;
-
-const REFRESH_MUTATION = `
-  mutation RefreshToken {
-    refreshToken {
-      accessToken
-      tokenType
-      expiresIn
-      refreshToken
-    }
-  }
-`;
-
-const LOGOUT_MUTATION = `
-  mutation Logout {
-    logout
-  }
-`;
-
-interface AuthPayloadResponse {
-  login: { accessToken: string };
-}
-
-interface RefreshTokenResponse {
-  refreshToken: { accessToken: string };
-}
-
-interface LogoutResponse {
-  logout: boolean;
-}
 
 /** Thrown by AuthService mutations; `code` carries the backend GraphQL error code. */
 export class AuthError extends Error {
@@ -85,10 +52,7 @@ export class AuthService {
    * that carry neither refreshable code pass through untouched; a failed
    * refresh clears the session and returns the original response.
    */
-  async query<T>(req: {
-    query: string;
-    variables?: Record<string, unknown>;
-  }): Promise<GraphQLResponse<T>> {
+  async query<T>(req: GraphQLRequest): Promise<GraphQLResponse<T>> {
     const response = await this.graphql.query<T>(req);
     if (!this.isRefreshable(response)) {
       return response;
@@ -118,8 +82,8 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<{ accessToken: string }> {
     // Credentials authenticate the request; skip any stale in-memory bearer.
-    const response = await this.graphql.query<AuthPayloadResponse>(
-      { query: LOGIN_MUTATION, variables: { email, password } },
+    const response = await this.graphql.query<LoginMutation>(
+      { query: LoginDocument, variables: { email, password } satisfies LoginMutationVariables },
       { skipAuth: true },
     );
 
@@ -151,8 +115,8 @@ export class AuthService {
 
   private async performRefresh(): Promise<boolean> {
     try {
-      const response = await this.graphql.query<RefreshTokenResponse>(
-        { query: REFRESH_MUTATION },
+      const response = await this.graphql.query<RefreshTokenMutation>(
+        { query: RefreshTokenDocument },
         { skipAuth: true },
       );
 
@@ -193,7 +157,7 @@ export class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await this.graphql.query<LogoutResponse>({ query: LOGOUT_MUTATION });
+      await this.graphql.query<LogoutMutation>({ query: LogoutDocument });
     } catch {
       // Ignore network/server failures; local state is cleared regardless.
     }

@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthError, AuthService } from './auth.service';
 import { AuthStateService } from './auth-state.service';
+import { provideAppApollo } from '../app.config';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -12,9 +13,21 @@ describe('AuthService', () => {
   /** Lets promise continuations (orchestration steps) run so the next request is issued. */
   const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
+  /** Waits for Apollo's link chain to reach the HTTP layer, then returns the request. */
+  const takeRequest = async () => {
+    await settle();
+    return httpMock.expectOne('/query');
+  };
+
+  /** Waits for Apollo's link chain to reach the HTTP layer, then returns all requests. */
+  const takeRequests = async () => {
+    await settle();
+    return httpMock.match(() => true);
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideAppApollo()],
     });
     authService = TestBed.inject(AuthService);
     authState = TestBed.inject(AuthStateService);
@@ -28,7 +41,7 @@ describe('AuthService', () => {
   it('stores the access token after successful login', async () => {
     const promise = authService.login('owner@coffee.local', 'password123');
 
-    const req = httpMock.expectOne('/query');
+    const req = await takeRequest();
     expect(req.request.body.query).toContain('mutation Login');
     expect(req.request.body.variables).toEqual({
       email: 'owner@coffee.local',
@@ -46,7 +59,7 @@ describe('AuthService', () => {
   it('throws on failed login', async () => {
     const promise = authService.login('wrong@coffee.local', 'wrong');
 
-    const req = httpMock.expectOne('/query');
+    const req = await takeRequest();
     req.flush({
       errors: [{ message: 'Authentication is required.', extensions: { code: 'UNAUTHENTICATED' } }],
     });
@@ -61,7 +74,7 @@ describe('AuthService', () => {
 
     const promise = authService.refreshSession();
 
-    const req = httpMock.expectOne('/query');
+    const req = await takeRequest();
     expect(req.request.body.query).toContain('mutation RefreshToken');
     // Refresh is cookie-based: no bearer header even though a token is held.
     expect(req.request.headers.has('Authorization')).toBeFalsy();
@@ -81,7 +94,7 @@ describe('AuthService', () => {
 
     const promise = authService.refreshSession();
 
-    const req = httpMock.expectOne('/query');
+    const req = await takeRequest();
     req.flush({
       errors: [
         { message: 'The refresh token is invalid.', extensions: { code: 'INVALID_REFRESH_TOKEN' } },
@@ -98,7 +111,7 @@ describe('AuthService', () => {
 
     const promise = authService.logout();
 
-    const req = httpMock.expectOne('/query');
+    const req = await takeRequest();
     expect(req.request.body.query).toContain('mutation Logout');
     req.flush({ data: { logout: true } });
 
@@ -110,7 +123,7 @@ describe('AuthService', () => {
     it('selects the refreshToken field in the login mutation (backend cookie layer keys on it)', async () => {
       const promise = authService.login('owner@coffee.local', 'password123');
 
-      const req = httpMock.expectOne('/query');
+      const req = await takeRequest();
       expect(req.request.body.query).toMatch(/login\([^)]*\)\s*\{[^}]*\brefreshToken\b[^}]*\}/);
       req.flush({
         data: {
@@ -129,7 +142,7 @@ describe('AuthService', () => {
     it('selects the nested refreshToken field in the refresh mutation (rotation must persist)', async () => {
       const promise = authService.refreshSession();
 
-      const req = httpMock.expectOne('/query');
+      const req = await takeRequest();
       expect(req.request.body.query).toMatch(/refreshToken\s*\{[^}]*\brefreshToken\b[^}]*\}/);
       req.flush({
         data: {
@@ -148,7 +161,7 @@ describe('AuthService', () => {
     it('discards the returned refresh token instead of persisting it client-side', async () => {
       const promise = authService.login('owner@coffee.local', 'password123');
 
-      const req = httpMock.expectOne('/query');
+      const req = await takeRequest();
       req.flush({
         data: {
           login: {
@@ -173,7 +186,7 @@ describe('AuthService', () => {
     it('restores the session from the refresh cookie and marks initialized', async () => {
       const promise = authService.restoreSession();
 
-      const req = httpMock.expectOne('/query');
+      const req = await takeRequest();
       expect(req.request.body.query).toContain('mutation RefreshToken');
       // Cookie-only: no bearer header at boot even though a stale token might exist.
       expect(req.request.headers.has('Authorization')).toBeFalsy();
@@ -196,7 +209,7 @@ describe('AuthService', () => {
     it('stays unauthenticated and marks initialized when the refresh cookie is invalid', async () => {
       const promise = authService.restoreSession();
 
-      const req = httpMock.expectOne('/query');
+      const req = await takeRequest();
       req.flush({
         errors: [
           {
@@ -229,7 +242,7 @@ describe('AuthService', () => {
       const promise = authService.query<{ me: string }>({ query: '{ me }' });
 
       // Original operation fails with the expired bearer.
-      let req = httpMock.expectOne('/query');
+      let req = await takeRequest();
       expect(req.request.headers.get('Authorization')).toBe('Bearer expired-token');
       req.flush({
         errors: [
@@ -239,7 +252,7 @@ describe('AuthService', () => {
       await settle();
 
       // Refresh runs once, cookie-only (no bearer).
-      req = httpMock.expectOne('/query');
+      req = await takeRequest();
       expect(req.request.body.query).toContain('mutation RefreshToken');
       expect(req.request.headers.has('Authorization')).toBeFalsy();
       req.flush({
@@ -250,8 +263,8 @@ describe('AuthService', () => {
       await settle();
 
       // The original operation is retried once with the new token.
-      req = httpMock.expectOne('/query');
-      expect(req.request.body.query).toContain('{ me }');
+      req = await takeRequest();
+      expect(req.request.body.query).toMatch(/\{\s*me\s*\}/);
       expect(req.request.headers.get('Authorization')).toBe('Bearer refreshed-token');
       req.flush({ data: { me: 'user' } });
 
@@ -265,11 +278,11 @@ describe('AuthService', () => {
 
       const promise = authService.query<{ me: string }>({ query: '{ me }' });
 
-      let req = httpMock.expectOne('/query');
+      let req = await takeRequest();
       req.flush({ errors: [{ extensions: { code: 'TOKEN_EXPIRED' } }] });
       await settle();
 
-      req = httpMock.expectOne('/query');
+      req = await takeRequest();
       req.flush({ errors: [{ extensions: { code: 'INVALID_REFRESH_TOKEN' } }] });
 
       const result = await promise;
@@ -282,11 +295,11 @@ describe('AuthService', () => {
 
       const promise = authService.query<{ me: string }>({ query: '{ me }' });
 
-      let req = httpMock.expectOne('/query');
+      let req = await takeRequest();
       req.flush({ errors: [{ extensions: { code: 'TOKEN_EXPIRED' } }] });
       await settle();
 
-      req = httpMock.expectOne('/query');
+      req = await takeRequest();
       req.flush({
         data: {
           refreshToken: { accessToken: 'refreshed-token', tokenType: 'Bearer', expiresIn: 900 },
@@ -295,7 +308,7 @@ describe('AuthService', () => {
       await settle();
 
       // The single retry still fails; no further refresh is attempted.
-      req = httpMock.expectOne('/query');
+      req = await takeRequest();
       req.flush({ errors: [{ extensions: { code: 'TOKEN_EXPIRED' } }] });
 
       const result = await promise;
@@ -308,7 +321,7 @@ describe('AuthService', () => {
       const promise = authService.query<{ me: string }>({ query: '{ me }' });
 
       // The merged backend surfaces an expired bearer as UNAUTHENTICATED.
-      let req = httpMock.expectOne('/query');
+      let req = await takeRequest();
       expect(req.request.headers.get('Authorization')).toBe('Bearer expired-token');
       req.flush({
         errors: [
@@ -318,7 +331,7 @@ describe('AuthService', () => {
       await settle();
 
       // Refresh runs once, cookie-only (no bearer).
-      req = httpMock.expectOne('/query');
+      req = await takeRequest();
       expect(req.request.body.query).toContain('mutation RefreshToken');
       expect(req.request.headers.has('Authorization')).toBeFalsy();
       req.flush({
@@ -329,8 +342,8 @@ describe('AuthService', () => {
       await settle();
 
       // The original operation is retried once with the new token.
-      req = httpMock.expectOne('/query');
-      expect(req.request.body.query).toContain('{ me }');
+      req = await takeRequest();
+      expect(req.request.body.query).toMatch(/\{\s*me\s*\}/);
       expect(req.request.headers.get('Authorization')).toBe('Bearer refreshed-token');
       req.flush({ data: { me: 'user' } });
 
@@ -342,7 +355,7 @@ describe('AuthService', () => {
     it('passes UNAUTHENTICATED through untouched when no token is held', async () => {
       const promise = authService.query<{ me: string }>({ query: '{ me }' });
 
-      const req = httpMock.expectOne('/query');
+      const req = await takeRequest();
       expect(req.request.headers.has('Authorization')).toBeFalsy();
       req.flush({
         errors: [
@@ -360,11 +373,11 @@ describe('AuthService', () => {
 
       const promise = authService.query<{ me: string }>({ query: '{ me }' });
 
-      let req = httpMock.expectOne('/query');
+      let req = await takeRequest();
       req.flush({ errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] });
       await settle();
 
-      req = httpMock.expectOne('/query');
+      req = await takeRequest();
       req.flush({ errors: [{ extensions: { code: 'INVALID_REFRESH_TOKEN' } }] });
 
       const result = await promise;
@@ -379,7 +392,7 @@ describe('AuthService', () => {
       const promiseB = authService.query<{ ok: boolean }>({ query: '{ b }' });
 
       // Both original operations fail with the expired bearer.
-      const originals = httpMock.match(() => true);
+      const originals = await takeRequests();
       expect(originals.length).toBe(2);
       for (const req of originals) {
         expect(req.request.headers.get('Authorization')).toBe('Bearer expired-token');
@@ -389,7 +402,7 @@ describe('AuthService', () => {
 
       // Two triggers raced, but only ONE refresh mutation is dispatched
       // (expectOne throws if a second concurrent refresh were also issued).
-      const refresh = httpMock.expectOne('/query');
+      const refresh = await takeRequest();
       expect(refresh.request.body.query).toContain('mutation RefreshToken');
       refresh.flush({
         data: {
@@ -399,7 +412,7 @@ describe('AuthService', () => {
       await settle();
 
       // Both operations retry with the shared fresh token.
-      const retries = httpMock.match(() => true);
+      const retries = await takeRequests();
       expect(retries.length).toBe(2);
       for (const req of retries) {
         expect(req.request.headers.get('Authorization')).toBe('Bearer refreshed-token');
@@ -419,7 +432,7 @@ describe('AuthService', () => {
       const promiseA = authService.query<{ ok: boolean }>({ query: '{ a }' });
       const promiseB = authService.query<{ ok: boolean }>({ query: '{ b }' });
 
-      const originals = httpMock.match(() => true);
+      const originals = await takeRequests();
       expect(originals.length).toBe(2);
       for (const req of originals) {
         req.flush({ errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] });
@@ -427,7 +440,7 @@ describe('AuthService', () => {
       await settle();
 
       // A single refresh mutation serves both triggers, and it genuinely fails.
-      const refresh = httpMock.expectOne('/query');
+      const refresh = await takeRequest();
       refresh.flush({ errors: [{ extensions: { code: 'INVALID_REFRESH_TOKEN' } }] });
 
       const [resultA, resultB] = await Promise.all([promiseA, promiseB]);
@@ -438,7 +451,7 @@ describe('AuthService', () => {
 
     it('starts a fresh refresh after a previous in-flight refresh settles', async () => {
       const first = authService.refreshSession();
-      let req = httpMock.expectOne('/query');
+      let req = await takeRequest();
       req.flush({
         data: {
           refreshToken: { accessToken: 'token-1', tokenType: 'Bearer', expiresIn: 900 },
@@ -448,7 +461,7 @@ describe('AuthService', () => {
 
       // The in-flight slot is reset, so a later trigger refreshes again.
       const second = authService.refreshSession();
-      req = httpMock.expectOne('/query');
+      req = await takeRequest();
       req.flush({
         data: {
           refreshToken: { accessToken: 'token-2', tokenType: 'Bearer', expiresIn: 900 },
@@ -463,7 +476,7 @@ describe('AuthService', () => {
         query: '{ categories { id } }',
       });
 
-      const req = httpMock.expectOne('/query');
+      const req = await takeRequest();
       req.flush({ data: { categories: [] } });
 
       const result = await promise;

@@ -1,0 +1,33 @@
+query Categories {
+  categories {
+    id
+    name
+    description
+    sortOrder
+  }
+}
+
+query Products($categoryId: ID) {
+  products(categoryId: $categoryId) {
+    id
+    categoryId
+    name
+    description
+    price
+    sku
+    modifierGroups {
+      id
+      name
+      minSelections
+      maxSelections
+      isRequired
+      sortOrder
+      modifiers {
+        id
+        name
+        priceDelta
+        sortOrder
+      }
+    }
+  }
+}
