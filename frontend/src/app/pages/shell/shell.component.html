@@ -1,27 +1,117 @@
 <div class="flex min-h-dvh flex-col bg-stone-100">
   <header class="bg-white shadow-sm ring-1 ring-stone-200">
-    <div class="mx-auto flex w-full max-w-4xl items-center justify-between px-4 py-3">
-      <span class="text-lg font-semibold tracking-tight text-stone-900">Coffee Shop</span>
-      <div class="flex items-center gap-2">
+    <div
+      class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+    >
+      <a
+        routerLink="/"
+        class="text-lg font-semibold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        Coffee Shop
+      </a>
+      <nav aria-label="Primary" class="flex flex-wrap items-center gap-1">
         <a
           routerLink="/menu"
+          data-nav="menu"
+          routerLinkActive="bg-stone-100"
           class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
         >
-          View menu
+          Menu
         </a>
+        <a
+          routerLink="/order"
+          data-nav="order"
+          routerLinkActive="bg-stone-100"
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        >
+          New order
+        </a>
+        @if (canViewPrepQueue()) {
+          <a
+            routerLink="/prep"
+            data-nav="prep"
+            routerLinkActive="bg-stone-100"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          >
+            Prep queue
+          </a>
+        }
+        @if (canManagePayments()) {
+          <a
+            routerLink="/payments"
+            data-nav="payments"
+            routerLinkActive="bg-stone-100"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          >
+            Payments
+          </a>
+        }
         <button
           type="button"
+          data-logout
           (click)="logout()"
           class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
         >
           Log out
         </button>
-      </div>
+      </nav>
     </div>
   </header>
 
-  <main class="mx-auto w-full max-w-4xl px-4 py-10">
+  <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
     <h1 class="text-2xl font-semibold tracking-tight text-stone-900">Welcome back</h1>
-    <p class="mt-2 text-sm text-stone-500">You are signed in. Product screens arrive in Phase 2.</p>
+    <p class="mt-2 text-sm text-stone-500">
+      Browse the menu, take an order, or jump into the staff workspace.
+    </p>
+
+    <nav aria-label="Workspace" class="mt-8 grid gap-4 sm:grid-cols-2">
+      <a
+        routerLink="/menu"
+        data-card="menu"
+        class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        <h2 class="text-lg font-semibold text-stone-900">Menu</h2>
+        <p class="mt-1 text-sm text-stone-500">
+          See categories, products, and modifier choices. This screen is public.
+        </p>
+      </a>
+
+      <a
+        routerLink="/order"
+        data-card="order"
+        class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        <h2 class="text-lg font-semibold text-stone-900">New order</h2>
+        <p class="mt-1 text-sm text-stone-500">
+          Build a guest or customer order, confirm it, and hand off payment to staff.
+        </p>
+      </a>
+
+      @if (canViewPrepQueue()) {
+        <a
+          routerLink="/prep"
+          data-card="prep"
+          class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        >
+          <h2 class="text-lg font-semibold text-stone-900">Prep queue</h2>
+          <p class="mt-1 text-sm text-stone-500">
+            Move accepted orders into preparation and mark them ready for pickup.
+          </p>
+        </a>
+      }
+
+      @if (canManagePayments()) {
+        <a
+          routerLink="/payments"
+          data-card="payments"
+          class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        >
+          <h2 class="text-lg font-semibold text-stone-900">Payments &amp; refunds</h2>
+          <p class="mt-1 text-sm text-stone-500">
+            Look up an order, record counter payments, and issue authorized refunds.
+          </p>
+        </a>
+      }
+    </nav>
   </main>
 </div>

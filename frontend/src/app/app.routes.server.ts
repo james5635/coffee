@@ -8,15 +8,28 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
-    // The public menu fetches its data in the browser through the auth-aware
-    // GraphQL path (`/query` with cookies), so it cannot be prerendered; render
-    // it client-side like the rest of the data-backed screens.
+    // Public menu data is fetched in the browser through the auth-aware
+    // GraphQL path (`/query` with cookies), so it cannot be prerendered.
     path: 'menu',
     renderMode: RenderMode.Client,
   },
   {
-    // The protected shell is gated by the in-memory-token auth guard, so it
-    // must render in the browser where that state exists.
+    // Guest checkout reads the menu and places orders in the browser.
+    path: 'order',
+    renderMode: RenderMode.Client,
+  },
+  {
+    // Staff screens depend on the in-memory-token auth guard and permission
+    // claims, so they must render in the browser where that state exists.
+    path: 'prep',
+    renderMode: RenderMode.Client,
+  },
+  {
+    path: 'payments',
+    renderMode: RenderMode.Client,
+  },
+  {
+    // The protected shell and unknown URLs fall back to client rendering.
     path: '**',
     renderMode: RenderMode.Client,
   },

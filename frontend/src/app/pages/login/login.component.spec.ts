@@ -50,6 +50,15 @@ describe('LoginComponent', () => {
     expect(compiled.querySelector('button[type="submit"]')).toBeTruthy();
   });
 
+  it('links back to the public menu', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const menuLink = compiled.querySelector<HTMLAnchorElement>('[data-menu-link]');
+
+    expect(menuLink?.getAttribute('href')).toBe('/menu');
+  });
+
   it('shows an invalid-credentials error message on UNAUTHENTICATED', async () => {
     authService.login.mockRejectedValue(new AuthError('UNAUTHENTICATED'));
 

@@ -101,6 +101,14 @@ describe('MenuComponent', () => {
     });
   });
 
+  it('links guests to the public checkout screen', async () => {
+    const fixture = await createComponent();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const orderLink = compiled.querySelector<HTMLAnchorElement>('[data-order-link]');
+
+    expect(orderLink?.getAttribute('href')).toBe('/order');
+  });
+
   it('renders categories, products, prices, and modifier groups', async () => {
     const fixture = await createComponent();
     const compiled = fixture.nativeElement as HTMLElement;
