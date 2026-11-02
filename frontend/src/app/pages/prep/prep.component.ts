@@ -197,19 +197,18 @@ export class PrepComponent implements OnInit {
   protected readonly canCancel = computed(() => this.authState.hasPermission('order.cancel'));
 
   /**
-   * Pending acceptance is scoped to managers/owners. When the token carries no
-   * role claim, fall back to the permission-only check (the design's
-   * authentication-only fallback); the backend still enforces the transition.
+   * Pending acceptance is scoped to managers/owners. Design decision
+   * (2026-11-01): pending orders are accepted by manager/owner via the existing
+   * `advanceOrderStatus` transition (PENDING→ACCEPTED); baristas drive the
+   * ACCEPTED→PREPARING→READY prep flow. When the token carries no usable role
+   * claim, fall back to the design-sanctioned authentication-only gate; the
+   * backend remains the permission boundary and surfaces `FORBIDDEN`.
    */
   protected readonly canAcceptPending = computed(() => {
-    if (!this.canUpdateStatus()) {
-      return false;
-    }
     const roles = this.authState.roles();
-    if (roles === null) {
-      return true;
-    }
-    return roles.includes('manager') || roles.includes('owner_admin');
+    const managerOrOwner =
+      roles === null || roles.includes('manager') || roles.includes('owner_admin');
+    return managerOrOwner && this.canUpdateStatus();
   });
 
   protected readonly queue = signal<PrepOrderView[]>([]);

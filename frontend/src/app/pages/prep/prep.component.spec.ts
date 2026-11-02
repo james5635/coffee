@@ -118,6 +118,11 @@ describe('PrepComponent', () => {
     permissions.set(['order.read.preparation_queue', 'order.update_status']);
   };
 
+  const setCashier = () => {
+    roles.set(['cashier']);
+    permissions.set(['order.read.assigned', 'order.update_unpaid', 'payment.accept']);
+  };
+
   const setManager = () => {
     roles.set(['manager']);
     permissions.set(['order.read.all', 'order.update_status', 'order.cancel', 'payment.accept']);
@@ -342,6 +347,26 @@ describe('PrepComponent', () => {
 
   it('does not offer pending acceptance to a barista', async () => {
     setBarista();
+    const fixture = await createComponent();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-accept-pending]'),
+    ).toBeNull();
+  });
+
+  it('offers pending acceptance through the auth-only fallback when no role claim is present', async () => {
+    // Design-sanctioned fallback: without a usable role claim, the accept action
+    // is gated on the permission alone; the backend still enforces the transition.
+    permissions.set(['order.update_status']);
+    const fixture = await createComponent();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-accept-pending]'),
+    ).toBeTruthy();
+  });
+
+  it('does not offer pending acceptance to a cashier', async () => {
+    setCashier();
     const fixture = await createComponent();
 
     expect(

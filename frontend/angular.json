@@ -41,7 +41,11 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
+                  "// Post-Phase 2 baseline is ~527 kB raw / ~135 kB transfer after route-level
+                  // lazy loading (Apollo Client + Angular 22 framework). The 1 MB error gate
+                  // below remains the hard limit; the warning threshold was raised off the old
+                  // pre-Apollo 500 kB provisional value.
+                  "maximumWarning": "550kB",
                   "maximumError": "1MB"
                 },
                 {

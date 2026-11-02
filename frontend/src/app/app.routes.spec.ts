@@ -3,36 +3,37 @@ import { routes } from './app.routes';
 import { serverRoutes } from './app.routes.server';
 import { authGuard } from './auth/auth.guard';
 import { MenuComponent } from './pages/menu/menu.component';
-import { OrderComponent } from './pages/order/order.component';
-import { PaymentsComponent } from './pages/payments/payments.component';
-import { PrepComponent } from './pages/prep/prep.component';
 
 describe('app routes', () => {
   it('exposes /menu as a public route', () => {
     const menu = routes.find((route) => route.path === 'menu');
 
     expect(menu?.component).toBe(MenuComponent);
+    expect(menu?.loadComponent).toBeUndefined();
     expect(menu?.canActivate).toBeUndefined();
   });
 
   it('exposes /order as a public guest checkout route', () => {
     const order = routes.find((route) => route.path === 'order');
 
-    expect(order?.component).toBe(OrderComponent);
+    expect(order?.component).toBeUndefined();
+    expect(order?.loadComponent).toBeInstanceOf(Function);
     expect(order?.canActivate).toBeUndefined();
   });
 
   it('protects the prep queue behind the auth guard', () => {
     const prep = routes.find((route) => route.path === 'prep');
 
-    expect(prep?.component).toBe(PrepComponent);
+    expect(prep?.component).toBeUndefined();
+    expect(prep?.loadComponent).toBeInstanceOf(Function);
     expect(prep?.canActivate).toContain(authGuard);
   });
 
   it('protects payments behind the auth guard', () => {
     const payments = routes.find((route) => route.path === 'payments');
 
-    expect(payments?.component).toBe(PaymentsComponent);
+    expect(payments?.component).toBeUndefined();
+    expect(payments?.loadComponent).toBeInstanceOf(Function);
     expect(payments?.canActivate).toContain(authGuard);
   });
 
