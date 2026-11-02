@@ -53,6 +53,18 @@ mutation PlaceOrder($input: PlaceOrderInput!) {
   }
 }
 
+query PreparationQueue {
+  preparationQueue {
+    ...OrderDetail
+  }
+}
+
+mutation AdvanceOrderStatus($orderId: ID!, $status: OrderStatus!) {
+  advanceOrderStatus(orderId: $orderId, status: $status) {
+    ...OrderDetail
+  }
+}
+
 mutation RecordPayment($input: RecordPaymentInput!) {
   recordPayment(input: $input) {
     id

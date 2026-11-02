@@ -9,9 +9,13 @@ import {
   RecordPaymentInput,
 } from '../../graphql/generated/schema';
 import {
+  AdvanceOrderStatusDocument,
+  AdvanceOrderStatusMutation,
   OrderDocument,
   PlaceOrderDocument,
   PlaceOrderMutation,
+  PreparationQueueDocument,
+  PreparationQueueQuery,
   ProductsDocument,
   ProductsQuery,
   RecordPaymentDocument,
@@ -172,6 +176,61 @@ describe('OrderService', () => {
       query: RecordPaymentDocument,
       variables: { input },
     });
+  });
+
+  it('loads the preparation queue through the generated document', async () => {
+    const queue: PreparationQueueQuery['preparationQueue'] = [
+      { ...order, status: OrderStatus.Accepted },
+      { ...order, id: 'order-2', orderNumber: '1002', status: OrderStatus.Preparing },
+    ];
+    authService.query.mockResolvedValue({ data: { preparationQueue: queue } });
+
+    const result = await service.preparationQueue();
+
+    expect(result).toEqual(queue);
+    expect(authService.query).toHaveBeenCalledWith({ query: PreparationQueueDocument });
+  });
+
+  it('maps a FORBIDDEN response from the preparation queue', async () => {
+    authService.query.mockResolvedValue({
+      errors: [{ message: 'missing permission', extensions: { code: 'FORBIDDEN' } }],
+    });
+
+    await expect(service.preparationQueue()).rejects.toMatchObject({
+      name: 'OrderError',
+      code: 'FORBIDDEN',
+    });
+  });
+
+  it('advances an order status through the generated document', async () => {
+    const updated: AdvanceOrderStatusMutation['advanceOrderStatus'] = {
+      ...order,
+      status: OrderStatus.Preparing,
+    };
+    authService.query.mockResolvedValue({ data: { advanceOrderStatus: updated } });
+
+    const result = await service.advanceOrderStatus('order-1', OrderStatus.Preparing);
+
+    expect(result).toEqual(updated);
+    expect(authService.query).toHaveBeenCalledWith({
+      query: AdvanceOrderStatusDocument,
+      variables: { orderId: 'order-1', status: OrderStatus.Preparing },
+    });
+  });
+
+  it('maps INVALID_STATE from advanceOrderStatus', async () => {
+    authService.query.mockResolvedValue({
+      errors: [
+        {
+          message: 'Order status changed.',
+          extensions: { code: 'INVALID_STATE' },
+        },
+      ],
+    });
+
+    await expect(
+      service.advanceOrderStatus('order-1', OrderStatus.Preparing),
+    ).rejects.toMatchObject({ name: 'OrderError', code: 'INVALID_STATE' });
   });
 
   it('maps INSUFFICIENT_BALANCE from recordPayment', async () => {

@@ -1,9 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import {
+  AdvanceOrderStatusDocument,
+  AdvanceOrderStatusMutation,
   OrderDocument,
   OrderQuery,
   PlaceOrderDocument,
   PlaceOrderMutation,
+  PreparationQueueDocument,
+  PreparationQueueQuery,
   ProductsDocument,
   ProductsQuery,
   RecordPaymentDocument,
@@ -11,6 +15,7 @@ import {
 } from '../../graphql/generated/graphql';
 import type {
   Order,
+  OrderStatus,
   Payment,
   PlaceOrderInput,
   RecordPaymentInput,
@@ -79,6 +84,30 @@ export class OrderService {
       variables: { input },
     });
     return this.unwrap(response, response.data?.recordPayment, 'record the payment');
+  }
+
+  /**
+   * Loads the staff preparation queue. The backend returns orders awaiting or
+   * in preparation and enforces `order.read.preparation_queue`.
+   */
+  async preparationQueue(): Promise<PreparationQueueQuery['preparationQueue']> {
+    const response = await this.auth.query<PreparationQueueQuery>({
+      query: PreparationQueueDocument,
+    });
+    return this.unwrap(response, response.data?.preparationQueue, 'load the prep queue');
+  }
+
+  /**
+   * Advances an order to the next preparation status. Transition validity and
+   * per-role allowances are enforced by the backend (`INVALID_STATE` for a
+   * stale/illegal transition, `FORBIDDEN` for a disallowed role).
+   */
+  async advanceOrderStatus(orderId: string, status: OrderStatus): Promise<Order> {
+    const response = await this.auth.query<AdvanceOrderStatusMutation>({
+      query: AdvanceOrderStatusDocument,
+      variables: { orderId, status },
+    });
+    return this.unwrap(response, response.data?.advanceOrderStatus, 'update the order status');
   }
 
   /** Converts a GraphQL error response into a typed `OrderError`. */
