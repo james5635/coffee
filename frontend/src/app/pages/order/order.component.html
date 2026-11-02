@@ -394,7 +394,7 @@
       </div>
     }
 
-    @if (isAuthenticated()) {
+    @if (canAcceptPayments()) {
       <section
         data-staff-payment
         aria-labelledby="staff-payment-heading"
@@ -405,7 +405,7 @@
             Staff · Record payment
           </h2>
           <p class="text-xs text-stone-500">
-            Cashier/manager permission is enforced by the server.
+            Shown to cashier/manager roles; the server enforces `payment.accept`.
           </p>
         </div>
 

@@ -101,6 +101,7 @@ describe('OrderComponent', () => {
     recordPayment: vi.fn(),
   };
   const authenticated = signal(false);
+  const permissions = signal<string[] | null>(null);
 
   /** Lets the component's floating async work settle before assertions. */
   const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -136,6 +137,7 @@ describe('OrderComponent', () => {
 
   beforeEach(async () => {
     authenticated.set(false);
+    permissions.set(null);
     orderService.listProducts.mockReset().mockResolvedValue(products);
     orderService.placeOrder.mockReset();
     orderService.getOrder.mockReset();
@@ -146,7 +148,17 @@ describe('OrderComponent', () => {
       providers: [
         provideRouter([]),
         { provide: OrderService, useValue: orderService },
-        { provide: AuthStateService, useValue: { isAuthenticated: authenticated } },
+        {
+          provide: AuthStateService,
+          useValue: {
+            isAuthenticated: authenticated,
+            permissions,
+            hasPermission: (permission: string) => {
+              const granted = permissions();
+              return granted === null ? authenticated() : granted.includes(permission);
+            },
+          },
+        },
       ],
     }).compileComponents();
   });
@@ -276,7 +288,38 @@ describe('OrderComponent', () => {
     expect(compiled.querySelector('[data-cart]')?.textContent).toContain('Flat White');
   });
 
-  it('shows the staff payment form to authenticated staff and prefills it after an order', async () => {
+  it.each([
+    ['customer', ['order.create', 'order.read.own']],
+    ['barista', ['order.read.preparation_queue', 'order.update_status']],
+  ])('hides the staff payment panel from an authenticated %s', async (_role, granted) => {
+    authenticated.set(true);
+    permissions.set(granted);
+    const fixture = await createComponent();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('[data-staff-payment]')).toBeFalsy();
+    expect(compiled.querySelector('[data-payment-form]')).toBeFalsy();
+  });
+
+  it('hides the staff payment panel when the permission claim grants nothing', async () => {
+    authenticated.set(true);
+    permissions.set([]);
+    const fixture = await createComponent();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('[data-staff-payment]')).toBeFalsy();
+  });
+
+  it('shows the staff payment panel to a user with payment.accept', async () => {
+    authenticated.set(true);
+    permissions.set(['payment.accept']);
+    const fixture = await createComponent();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('[data-staff-payment]')).toBeTruthy();
+  });
+
+  it('shows the staff payment form when permission claims are absent (auth-only fallback) and prefills it after an order', async () => {
     authenticated.set(true);
     orderService.placeOrder.mockResolvedValue(placedOrder);
     const fixture = await createComponent();

@@ -333,9 +333,11 @@ function paymentErrorMessage(error: unknown): string {
  * the server-computed totals and payment status. There is no online payment
  * step: staff record payment separately with `recordPayment`.
  *
- * Authenticated staff also get a payment panel. The backend is the permission
- * boundary; `FORBIDDEN`, `INSUFFICIENT_BALANCE`, and `INVALID_STATE` are
- * surfaced as plain-language errors instead of being hidden.
+ * Staff with the `payment.accept` permission (decoded from the access token)
+ * also get a payment panel; a token without permission claims falls back to
+ * authentication-only gating. The backend is the real permission boundary;
+ * `FORBIDDEN`, `INSUFFICIENT_BALANCE`, and `INVALID_STATE` are surfaced as
+ * plain-language errors instead of being hidden.
  */
 @Component({
   selector: 'app-order',
@@ -348,7 +350,10 @@ export class OrderComponent implements OnInit {
   private readonly authState = inject(AuthStateService);
   private readonly fb = inject(FormBuilder);
 
-  protected readonly isAuthenticated = this.authState.isAuthenticated;
+  /** Staff payment actions are gated on `payment.accept` when claims exist. */
+  protected readonly canAcceptPayments = computed(() =>
+    this.authState.hasPermission('payment.accept'),
+  );
 
   protected readonly loadingProducts = signal(true);
   protected readonly productsError = signal<string | null>(null);
