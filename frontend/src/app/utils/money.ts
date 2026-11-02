@@ -40,6 +40,18 @@ export function formatCents(cents: number): string {
   return `${sign}$${dollars}.${remainder}`;
 }
 
+/**
+ * Renders integer cents back into the backend's two-decimal Decimal wire
+ * format (no currency symbol), for money inputs such as payment amounts.
+ */
+export function centsToDecimalString(cents: number): string {
+  const sign = cents < 0 ? '-' : '';
+  const absolute = Math.abs(cents);
+  const dollars = Math.floor(absolute / 100);
+  const remainder = String(absolute % 100).padStart(2, '0');
+  return `${sign}${dollars}.${remainder}`;
+}
+
 /** Formats a backend Decimal money string, falling back to the raw value. */
 export function formatMoney(value: string): string {
   const cents = parseDecimalToCents(value);

@@ -1,0 +1,523 @@
+<main class="min-h-dvh bg-stone-100">
+  <header class="border-b border-stone-200 bg-white">
+    <div class="mx-auto flex w-full max-w-5xl items-start justify-between gap-4 px-4 py-6">
+      <div>
+        <p class="text-xs font-semibold tracking-[0.2em] text-amber-700 uppercase">Coffee Shop</p>
+        <h1 class="mt-1 text-3xl font-semibold tracking-tight text-stone-900">New order</h1>
+        <p class="mt-1 text-sm text-stone-500">
+          Build the order, confirm it, then staff collect payment at the counter.
+        </p>
+      </div>
+      <a
+        routerLink="/menu"
+        class="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        View menu
+      </a>
+    </div>
+  </header>
+
+  <div class="mx-auto w-full max-w-5xl px-4 py-8">
+    @if (placedOrder(); as order) {
+      <section
+        data-confirmation
+        class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200"
+        aria-labelledby="confirmation-heading"
+      >
+        <p class="text-xs font-semibold tracking-[0.2em] text-emerald-700 uppercase">
+          Order confirmed
+        </p>
+        <div class="mt-2 flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="confirmation-heading" class="text-2xl font-semibold text-stone-900">
+            Order <span data-order-number>#{{ order.orderNumber }}</span>
+          </h2>
+          <span
+            data-order-status
+            class="rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-stone-700"
+          >
+            {{ order.statusLabel }}
+          </span>
+        </div>
+        <p class="mt-1 text-sm text-stone-500">
+          {{ order.orderTypeLabel }}
+          @if (order.customerName) {
+            · {{ order.customerName }}
+          }
+        </p>
+        @if (order.notes) {
+          <p class="mt-2 rounded-lg bg-stone-50 px-3 py-2 text-sm text-stone-600">
+            Note: {{ order.notes }}
+          </p>
+        }
+
+        <div
+          data-payment-status
+          class="mt-5 rounded-xl bg-amber-50 px-4 py-4 text-sm text-amber-900 ring-1 ring-amber-200"
+        >
+          <p class="text-base font-semibold">{{ order.paymentStatusLabel }}</p>
+          <p class="mt-1">{{ order.paymentNote }}</p>
+        </div>
+
+        <h3 class="mt-6 text-sm font-semibold tracking-wide text-stone-800 uppercase">Items</h3>
+        <ul data-confirmation-items class="mt-2 divide-y divide-stone-100">
+          @for (item of order.items; track item.id) {
+            <li class="flex items-start justify-between gap-4 py-2 text-sm">
+              <div>
+                <p class="font-medium text-stone-900">{{ item.quantity }} × {{ item.name }}</p>
+                @if (item.modifiersLabel) {
+                  <p class="text-stone-500">{{ item.modifiersLabel }}</p>
+                }
+              </div>
+              <p class="shrink-0 text-stone-700">{{ item.lineTotalLabel }}</p>
+            </li>
+          }
+        </ul>
+
+        <dl class="mt-4 space-y-1 border-t border-stone-200 pt-4 text-sm">
+          <div class="flex justify-between gap-4">
+            <dt class="text-stone-500">Subtotal</dt>
+            <dd class="text-stone-700">{{ order.subtotalLabel }}</dd>
+          </div>
+          <div class="flex justify-between gap-4">
+            <dt class="text-stone-500">Tax</dt>
+            <dd class="text-stone-700">{{ order.taxLabel }}</dd>
+          </div>
+          <div class="flex justify-between gap-4 text-base font-semibold">
+            <dt class="text-stone-900">Total</dt>
+            <dd class="text-stone-900">{{ order.totalLabel }}</dd>
+          </div>
+        </dl>
+
+        @if (order.payments.length > 0) {
+          <h3 class="mt-6 text-sm font-semibold tracking-wide text-stone-800 uppercase">
+            Payments
+          </h3>
+          <ul class="mt-2 divide-y divide-stone-100">
+            @for (payment of order.payments; track payment.id) {
+              <li class="flex justify-between gap-4 py-2 text-sm">
+                <span class="text-stone-600">
+                  {{ payment.kind === 'REFUND' ? 'Refund' : 'Payment' }} ·
+                  {{ payment.methodLabel }}
+                </span>
+                <span class="text-stone-700">{{ payment.amountLabel }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <button
+            type="button"
+            data-new-order
+            (click)="startNewOrder()"
+            class="rounded-lg bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          >
+            Start another order
+          </button>
+          <a
+            routerLink="/menu"
+            class="rounded-lg px-4 py-2 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          >
+            Back to menu
+          </a>
+        </div>
+      </section>
+    } @else {
+      <div class="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <section aria-labelledby="menu-heading">
+          <h2 id="menu-heading" class="text-lg font-semibold text-stone-900">Menu</h2>
+
+          @if (loadingProducts()) {
+            <p
+              role="status"
+              class="mt-3 rounded-xl bg-white px-4 py-3 text-sm text-stone-600 ring-1 ring-stone-200"
+            >
+              Loading menu…
+            </p>
+          } @else if (productsError(); as message) {
+            <div
+              role="alert"
+              class="mt-3 flex flex-col items-start gap-3 rounded-xl bg-red-50 px-4 py-4 text-sm text-red-700 ring-1 ring-red-200"
+            >
+              <p>{{ message }}</p>
+              <button
+                type="button"
+                (click)="loadProducts()"
+                class="rounded-lg bg-red-700 px-3 py-1.5 font-medium text-white transition-colors hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+              >
+                Try again
+              </button>
+            </div>
+          } @else if (products().length === 0) {
+            <p
+              class="mt-3 rounded-xl bg-white px-4 py-3 text-sm text-stone-600 ring-1 ring-stone-200"
+            >
+              No items are available to order right now.
+            </p>
+          } @else {
+            <ul class="mt-3 space-y-4">
+              @for (product of products(); track product.id) {
+                <li>
+                  <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
+                    <div class="flex items-start justify-between gap-4">
+                      <div class="min-w-0">
+                        <h3 class="text-lg font-semibold text-stone-900">{{ product.name }}</h3>
+                        <p class="mt-1 text-sm text-stone-500">{{ product.description }}</p>
+                      </div>
+                      <p class="shrink-0 text-lg font-semibold text-stone-900">
+                        {{ product.priceLabel }}
+                      </p>
+                    </div>
+
+                    @for (group of product.modifierGroups; track group.id) {
+                      <fieldset class="mt-4 border-t border-stone-100 pt-3">
+                        <legend class="flex w-full flex-wrap items-baseline justify-between gap-2">
+                          <span class="text-sm font-semibold text-stone-800">{{ group.name }}</span>
+                          <span class="text-xs font-medium text-stone-500">{{
+                            group.ruleLabel
+                          }}</span>
+                        </legend>
+                        <div class="mt-2 space-y-1.5">
+                          @for (modifier of group.modifiers; track modifier.id) {
+                            <label
+                              class="flex cursor-pointer items-center justify-between gap-4 text-sm text-stone-700"
+                            >
+                              <span class="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  [attr.data-modifier-id]="modifier.id"
+                                  [checked]="isModifierSelected(product.id, modifier.id)"
+                                  (change)="toggleModifier(product.id, group, modifier.id)"
+                                  class="size-4 rounded border-stone-300 text-amber-700 focus:ring-amber-600"
+                                />
+                                {{ modifier.name }}
+                              </span>
+                              @if (modifier.priceDeltaLabel) {
+                                <span class="text-stone-500">{{ modifier.priceDeltaLabel }}</span>
+                              }
+                            </label>
+                          }
+                        </div>
+                      </fieldset>
+                    }
+
+                    @if (modifierError(); as error) {
+                      @if (error.productId === product.id) {
+                        <p
+                          data-modifier-error
+                          role="alert"
+                          class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+                        >
+                          {{ error.message }}
+                        </p>
+                      }
+                    }
+
+                    <button
+                      type="button"
+                      [attr.data-add-product]="product.id"
+                      (click)="addToCart(product)"
+                      class="mt-4 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900"
+                    >
+                      Add to order
+                    </button>
+                  </article>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <aside class="space-y-6">
+          <section
+            aria-labelledby="cart-heading"
+            class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200"
+          >
+            <h2 id="cart-heading" class="text-lg font-semibold text-stone-900">Your order</h2>
+
+            @if (cart().length === 0) {
+              <p class="mt-2 text-sm text-stone-500">No items yet. Add something from the menu.</p>
+            } @else {
+              <ul data-cart class="mt-3 divide-y divide-stone-100">
+                @for (line of cart(); track line.key) {
+                  <li data-cart-line class="py-3 text-sm">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="font-medium text-stone-900">{{ line.productName }}</p>
+                        @if (line.modifierNames.length > 0) {
+                          <p class="text-stone-500">{{ line.modifierNames.join(', ') }}</p>
+                        }
+                      </div>
+                      <p class="shrink-0 font-medium text-stone-700">
+                        {{ lineTotalLabel(line) }}
+                      </p>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        [attr.aria-label]="'Decrease ' + line.productName"
+                        (click)="changeQuantity(line, -1)"
+                        class="size-7 rounded-md text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+                      >
+                        −
+                      </button>
+                      <span class="min-w-6 text-center">{{ line.quantity }}</span>
+                      <button
+                        type="button"
+                        [attr.aria-label]="'Increase ' + line.productName"
+                        (click)="changeQuantity(line, 1)"
+                        class="size-7 rounded-md text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+                      >
+                        +
+                      </button>
+                      <button
+                        type="button"
+                        (click)="removeLine(line)"
+                        class="ml-auto text-xs font-medium text-red-700 underline-offset-2 transition-colors hover:text-red-600 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+              <p
+                class="mt-2 flex justify-between border-t border-stone-200 pt-3 text-sm font-semibold"
+              >
+                <span>Total</span>
+                <span>{{ formatCents(cartTotalCents()) }}</span>
+              </p>
+            }
+          </section>
+
+          <section
+            aria-labelledby="checkout-heading"
+            class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200"
+          >
+            <h2 id="checkout-heading" class="text-lg font-semibold text-stone-900">Checkout</h2>
+            <p class="mt-1 text-xs text-stone-500">
+              No payment is taken here. The server calculates the final total.
+            </p>
+
+            <form
+              class="mt-4 space-y-4"
+              [formGroup]="form"
+              (ngSubmit)="placeOrder()"
+              data-checkout-form
+            >
+              <div>
+                <label for="order-type" class="block text-sm font-medium text-stone-700">
+                  Order type
+                </label>
+                <select
+                  id="order-type"
+                  formControlName="orderType"
+                  data-order-type
+                  class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                >
+                  @for (type of orderTypes; track type.value) {
+                    <option [value]="type.value">{{ type.label }}</option>
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label for="customer-name" class="block text-sm font-medium text-stone-700">
+                  Name <span class="font-normal text-stone-400">(optional)</span>
+                </label>
+                <input
+                  id="customer-name"
+                  formControlName="customerName"
+                  data-customer-name
+                  autocomplete="name"
+                  class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                  placeholder="For the order call-out"
+                />
+              </div>
+
+              <div>
+                <label for="customer-email" class="block text-sm font-medium text-stone-700">
+                  Email <span class="font-normal text-stone-400">(optional)</span>
+                </label>
+                <input
+                  id="customer-email"
+                  type="email"
+                  formControlName="customerEmail"
+                  data-customer-email
+                  autocomplete="email"
+                  class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                  placeholder="you@example.com"
+                />
+                @if (form.controls.customerEmail.invalid && form.controls.customerEmail.touched) {
+                  <p class="mt-1 text-sm text-red-600">Enter a valid email address.</p>
+                }
+              </div>
+
+              <div>
+                <label for="order-notes" class="block text-sm font-medium text-stone-700">
+                  Notes <span class="font-normal text-stone-400">(optional)</span>
+                </label>
+                <textarea
+                  id="order-notes"
+                  formControlName="notes"
+                  data-notes
+                  rows="2"
+                  class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                  placeholder="Allergies, pickup notes…"
+                ></textarea>
+              </div>
+
+              @if (checkoutError(); as message) {
+                <p
+                  role="alert"
+                  class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200"
+                >
+                  {{ message }}
+                </p>
+              }
+
+              <button
+                type="submit"
+                data-place-order
+                [disabled]="submitting()"
+                class="w-full rounded-lg bg-amber-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-amber-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                @if (submitting()) {
+                  Placing order…
+                } @else {
+                  Place order
+                }
+              </button>
+            </form>
+          </section>
+        </aside>
+      </div>
+    }
+
+    @if (isAuthenticated()) {
+      <section
+        data-staff-payment
+        aria-labelledby="staff-payment-heading"
+        class="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-stone-200"
+      >
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="staff-payment-heading" class="text-lg font-semibold text-stone-900">
+            Staff · Record payment
+          </h2>
+          <p class="text-xs text-stone-500">
+            Cashier/manager permission is enforced by the server.
+          </p>
+        </div>
+
+        <form
+          class="mt-4 grid gap-4 sm:grid-cols-2"
+          [formGroup]="paymentForm"
+          (ngSubmit)="recordPayment()"
+          data-payment-form
+        >
+          <div class="sm:col-span-2">
+            <label for="payment-order-id" class="block text-sm font-medium text-stone-700">
+              Order ID
+            </label>
+            <div class="mt-1 flex gap-2">
+              <input
+                id="payment-order-id"
+                formControlName="orderId"
+                data-payment-order-id
+                autocomplete="off"
+                class="w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+                placeholder="Order ID"
+              />
+              <button
+                type="button"
+                data-lookup-order
+                (click)="lookUpOrder()"
+                [disabled]="lookupSubmitting()"
+                class="shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {{ lookupSubmitting() ? 'Loading…' : 'Look up' }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label for="payment-method" class="block text-sm font-medium text-stone-700">
+              Method
+            </label>
+            <select
+              id="payment-method"
+              formControlName="method"
+              data-payment-method
+              class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+            >
+              @for (method of paymentMethods; track method.value) {
+                <option [value]="method.value">{{ method.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div>
+            <label for="payment-amount" class="block text-sm font-medium text-stone-700">
+              Amount
+            </label>
+            <input
+              id="payment-amount"
+              formControlName="amount"
+              data-payment-amount
+              inputmode="decimal"
+              autocomplete="off"
+              class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+              placeholder="0.00"
+            />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label for="payment-reference" class="block text-sm font-medium text-stone-700">
+              External reference <span class="font-normal text-stone-400">(optional)</span>
+            </label>
+            <input
+              id="payment-reference"
+              formControlName="externalReference"
+              data-payment-reference
+              autocomplete="off"
+              class="mt-1 w-full rounded-lg border-0 bg-stone-50 px-3 py-2 text-stone-900 ring-1 ring-inset ring-stone-300 placeholder:text-stone-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-amber-600"
+              placeholder="Card terminal reference"
+            />
+          </div>
+
+          @if (paymentError(); as message) {
+            <p
+              data-payment-error
+              role="alert"
+              class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200 sm:col-span-2"
+            >
+              {{ message }}
+            </p>
+          }
+          @if (paymentSuccess(); as message) {
+            <p
+              data-payment-success
+              role="status"
+              class="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200 sm:col-span-2"
+            >
+              {{ message }}
+            </p>
+          }
+
+          <button
+            type="submit"
+            data-record-payment
+            [disabled]="paymentSubmitting()"
+            class="rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-900 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
+          >
+            @if (paymentSubmitting()) {
+              Recording…
+            } @else {
+              Record payment
+            }
+          </button>
+        </form>
+      </section>
+    }
+  </div>
+</main>

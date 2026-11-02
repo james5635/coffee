@@ -1,4 +1,4 @@
-import { formatCents, formatMoney, parseDecimalToCents } from './money';
+import { centsToDecimalString, formatCents, formatMoney, parseDecimalToCents } from './money';
 
 describe('money', () => {
   describe('parseDecimalToCents', () => {
@@ -39,6 +39,16 @@ describe('money', () => {
 
     it('formats negative amounts with the sign before the currency symbol', () => {
       expect(formatCents(-250)).toBe('-$2.50');
+    });
+  });
+
+  describe('centsToDecimalString', () => {
+    it('renders integer cents back into the backend two-decimal wire format', () => {
+      expect(centsToDecimalString(1299)).toBe('12.99');
+      expect(centsToDecimalString(129)).toBe('1.29');
+      expect(centsToDecimalString(5)).toBe('0.05');
+      expect(centsToDecimalString(0)).toBe('0.00');
+      expect(centsToDecimalString(-250)).toBe('-2.50');
     });
   });
 

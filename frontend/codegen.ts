@@ -15,12 +15,25 @@ const config: CodegenConfig = {
   schema: '../backend/graph/schema.graphqls',
   documents: 'src/graphql/operations/**/*.graphql',
   generates: {
+    // Schema types live in their own file. The operations plugin regenerates any
+    // input/enum type an operation references, which would otherwise duplicate
+    // the schema plugin's declarations when both target one file.
+    'src/graphql/generated/schema.ts': {
+      plugins: ['typescript'],
+      config: {
+        // Backend `Decimal` and `Time` scalars are formatted as strings on the wire.
+        scalars: {
+          Decimal: 'string',
+          Time: 'string',
+        },
+      },
+    },
     'src/graphql/generated/graphql.ts': {
-      // `typescript` emits the schema types that the operation plugins build on.
-      plugins: ['typescript', 'typescript-operations', 'typescript-apollo-angular'],
+      plugins: ['typescript-operations', 'typescript-apollo-angular'],
       config: {
         documentMode: 'documentNode',
-        // Backend `Decimal` and `Time` scalars are formatted as strings on the wire.
+        // Reference the schema declarations instead of re-emitting them.
+        importSchemaTypesFrom: './src/graphql/generated/schema',
         scalars: {
           Decimal: 'string',
           Time: 'string',

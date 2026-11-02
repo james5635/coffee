@@ -1,0 +1,67 @@
+fragment OrderDetail on Order {
+  id
+  orderNumber
+  status
+  orderType
+  customerName
+  customerEmail
+  notes
+  subtotal
+  discountAmount
+  taxAmount
+  total
+  currency
+  createdAt
+  updatedAt
+  completedAt
+  items {
+    id
+    productId
+    productName
+    quantity
+    unitPrice
+    lineTotal
+    specialInstructions
+    modifiers {
+      id
+      modifierId
+      modifierName
+      priceDelta
+    }
+  }
+  payments {
+    id
+    kind
+    status
+    method
+    amount
+    externalReference
+    createdAt
+    settledAt
+  }
+}
+
+query Order($id: ID!) {
+  order(id: $id) {
+    ...OrderDetail
+  }
+}
+
+mutation PlaceOrder($input: PlaceOrderInput!) {
+  placeOrder(input: $input) {
+    ...OrderDetail
+  }
+}
+
+mutation RecordPayment($input: RecordPaymentInput!) {
+  recordPayment(input: $input) {
+    id
+    kind
+    status
+    method
+    amount
+    externalReference
+    createdAt
+    settledAt
+  }
+}
