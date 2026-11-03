@@ -76,7 +76,7 @@ JOIN (
             WHEN 12 THEN 2
             ELSE 3
           END
-        + 7 * (j.j - 1)
+        + CASE j.j WHEN 1 THEN 0 WHEN 2 THEN 7 ELSE 13 END
       ) % (SELECT count(*) FROM products);
 
 UPDATE orders o
