@@ -47,6 +47,20 @@ type PaymentTx interface {
 	CreateRefund(context.Context, Payment) (Payment, error)
 }
 
+// ReportsRepository is the read-only sales reports surface consumed by
+// ReportsService. It maps generated sqlc report queries into shared repository
+// business types.
+type ReportsRepository interface {
+	GetShopSettings(context.Context) (ShopSettings, error)
+	PeriodTotals(context.Context, time.Time, time.Time) (PeriodTotals, error)
+	SalesTrend(context.Context, string, int) ([]DayPoint, error)
+	TopItems(context.Context, time.Time, time.Time, int) ([]TopItem, error)
+	HourlyOrderCounts(context.Context, time.Time, time.Time, string) ([]HourPoint, error)
+	PaymentMethodTotals(context.Context, time.Time, time.Time) ([]PaymentMethodPoint, error)
+	RefundTotals(context.Context, time.Time, time.Time) (RefundTotals, error)
+	RecentRefunds(context.Context, int) ([]RefundLine, error)
+}
+
 // AuthRepository is the repository-layer auth surface consumed by AuthService.
 // It maps generated sqlc query results into shared repository business types.
 type AuthRepository interface {

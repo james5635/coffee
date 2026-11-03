@@ -171,7 +171,7 @@ func (tx *postgresOrderTx) GetShopSettings(ctx context.Context) (ShopSettings, e
 	if err != nil {
 		return ShopSettings{}, err
 	}
-	return ShopSettings{Name: row.Name, Currency: row.Currency, TaxRate: taxRate}, nil
+	return ShopSettings{Name: row.Name, Currency: row.Currency, Timezone: row.Timezone, TaxRate: taxRate}, nil
 }
 
 func (tx *postgresOrderTx) GetOrCreateCustomer(ctx context.Context, userID int64) (Customer, error) {

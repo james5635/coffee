@@ -59,6 +59,7 @@ type Customer struct {
 type ShopSettings struct {
 	Name     string
 	Currency string
+	Timezone string
 	TaxRate  TaxRate
 }
 
@@ -226,4 +227,76 @@ type RefreshToken struct {
 	ExpiresAt time.Time
 	RevokedAt *time.Time
 	CreatedAt time.Time
+}
+
+// PeriodTotals aggregates gross sales, refunds, and order counts over a period.
+type PeriodTotals struct {
+	GrossSales  Money
+	Refunds     Money
+	RefundCount int
+	OrderCount  int
+}
+
+// RefundTotals summarizes refunds recorded within a period.
+type RefundTotals struct {
+	Count int
+	Total Money
+}
+
+// DayPoint is the net sales and order count for a single calendar day.
+type DayPoint struct {
+	Day        string
+	NetSales   Money
+	OrderCount int
+}
+
+// TopItem aggregates the best-selling product within a period.
+type TopItem struct {
+	ProductName string
+	Quantity    int
+	Revenue     Money
+}
+
+// HourPoint is the number of orders booked at a given hour of day.
+type HourPoint struct {
+	Hour       int
+	OrderCount int
+}
+
+// PaymentMethodPoint splits payment totals by method within a period.
+type PaymentMethodPoint struct {
+	Method PaymentMethod
+	Count  int
+	Amount Money
+}
+
+// RefundLine is a single refund with its order context.
+type RefundLine struct {
+	OrderNumber int64
+	Amount      Money
+	CreatedAt   time.Time
+}
+
+// SalesSnapshot is the aggregated sales payload for a single day (today/yesterday).
+type SalesSnapshot struct {
+	NetSales          Money
+	GrossSales        Money
+	OrderCount        int
+	AverageOrderValue Money
+	RefundCount       int
+	RefundTotal       Money
+}
+
+// SalesSummary is the assembled sales report payload for the dashboard.
+type SalesSummary struct {
+	Currency      string
+	Timezone      string
+	Today         SalesSnapshot
+	Yesterday     SalesSnapshot
+	Trend         []DayPoint
+	TopItems      []TopItem
+	Hours         []HourPoint
+	Split         []PaymentMethodPoint
+	Refunds       RefundTotals
+	RecentRefunds []RefundLine
 }
