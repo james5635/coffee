@@ -89,6 +89,9 @@ function moneyLabel(value: string, currency: string): string {
   return currency === 'USD' ? formatted : `${currency} ${formatted.replace(/^\$/, '')}`;
 }
 
+// chartValue converts a Decimal money string (cents) to a number for Chart.js.
+// Visualization-only: Chart.js requires numbers, so this float division is not
+// used for any money calculation or display. Do not use for arithmetic.
 function chartValue(value: string): number {
   return (parseDecimalToCents(value) ?? 0) / 100;
 }
@@ -134,7 +137,7 @@ export class ReportsComponent {
   protected readonly hourPoints = computed(() => this.summary()?.hours ?? []);
   protected readonly splitPoints = computed(() => this.summary()?.split ?? []);
   protected readonly refundSummary = computed(() => this.summary()?.refunds ?? { count: 0, total: '0.00' });
-  protected readonly recentRefunds = computed(() => this.summary()?.recentRefunds ?? []);
+  protected readonly recentRefunds = computed(() => this.summary()?.refunds?.recent ?? []);
 
   /** Exposed to the template for per-currency money display. */
   protected readonly amountLabel = moneyLabel;

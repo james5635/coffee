@@ -203,6 +203,7 @@ type RefundLine {
 type RefundSummary {
   count: Int!
   total: Decimal!
+  recent: [RefundLine!]!
 }
 
 type SalesSummary {
@@ -215,7 +216,6 @@ type SalesSummary {
   hours: [HourPoint!]!
   split: [PaymentMethodPoint!]!
   refunds: RefundSummary!
-  recentRefunds: [RefundLine!]!
 }
 
 type Mutation {

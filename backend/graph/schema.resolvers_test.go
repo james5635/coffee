@@ -247,12 +247,12 @@ func TestSalesSummaryResolverMapsPayload(t *testing.T) {
 	if payload.Refunds.Count != 2 || payload.Refunds.Total != "9.50" {
 		t.Errorf("Refunds = %+v, want count 2 total 9.50", payload.Refunds)
 	}
-	if len(payload.RecentRefunds) != 1 || payload.RecentRefunds[0].OrderNumber != "42" || payload.RecentRefunds[0].Amount != "5.00" {
-		t.Errorf("RecentRefunds = %+v, want orderNumber 42 amount 5.00", payload.RecentRefunds)
+	if len(payload.Refunds.Recent) != 1 || payload.Refunds.Recent[0].OrderNumber != "42" || payload.Refunds.Recent[0].Amount != "5.00" {
+		t.Errorf("Refunds.Recent = %+v, want orderNumber 42 amount 5.00", payload.Refunds.Recent)
 	}
 	wantCreatedAt := time.Date(2026, 11, 1, 14, 30, 0, 0, time.UTC)
-	if !payload.RecentRefunds[0].CreatedAt.Equal(wantCreatedAt) {
-		t.Errorf("RecentRefunds[0].CreatedAt = %v, want %v", payload.RecentRefunds[0].CreatedAt, wantCreatedAt)
+	if !payload.Refunds.Recent[0].CreatedAt.Equal(wantCreatedAt) {
+		t.Errorf("Refunds.Recent[0].CreatedAt = %v, want %v", payload.Refunds.Recent[0].CreatedAt, wantCreatedAt)
 	}
 }
 

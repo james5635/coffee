@@ -22,7 +22,16 @@ type fakeReportsRepository struct {
 	splitRows     []repository.PaymentMethodPoint
 	refundTotals  map[[2]int64]repository.RefundTotals
 	recentRefunds []repository.RefundLine
+	topItems      []repository.TopItem
 	err           error
+
+	// captured args, used to pin the service's window arguments.
+	lastTopStart, lastTopEnd time.Time
+	lastTopLimit             int
+	lastHourStart, lastHourEnd time.Time
+	lastHourTZ                 string
+	lastRefundStart, lastRefundEnd time.Time
+	lastSplitStart, lastSplitEnd   time.Time
 }
 
 func newFakeReportsRepository() *fakeReportsRepository {
@@ -73,12 +82,18 @@ func (f *fakeReportsRepository) SalesTrend(ctx context.Context, tzName string, d
 func (f *fakeReportsRepository) TopItems(ctx context.Context, start, end time.Time, limit int) ([]repository.TopItem, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return nil, nil
+	f.lastTopStart, f.lastTopEnd = start, end
+	f.lastTopLimit = limit
+	out := make([]repository.TopItem, len(f.topItems))
+	copy(out, f.topItems)
+	return out, nil
 }
 
 func (f *fakeReportsRepository) HourlyOrderCounts(ctx context.Context, start, end time.Time, tzName string) ([]repository.HourPoint, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.lastHourStart, f.lastHourEnd = start, end
+	f.lastHourTZ = tzName
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -90,6 +105,7 @@ func (f *fakeReportsRepository) HourlyOrderCounts(ctx context.Context, start, en
 func (f *fakeReportsRepository) PaymentMethodTotals(ctx context.Context, start, end time.Time) ([]repository.PaymentMethodPoint, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.lastSplitStart, f.lastSplitEnd = start, end
 	out := make([]repository.PaymentMethodPoint, len(f.splitRows))
 	copy(out, f.splitRows)
 	return out, nil
@@ -98,6 +114,7 @@ func (f *fakeReportsRepository) PaymentMethodTotals(ctx context.Context, start, 
 func (f *fakeReportsRepository) RefundTotals(ctx context.Context, start, end time.Time) (repository.RefundTotals, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.lastRefundStart, f.lastRefundEnd = start, end
 	if f.err != nil {
 		return repository.RefundTotals{}, f.err
 	}
@@ -238,7 +255,7 @@ func TestTimezoneBucketingRespected(t *testing.T) {
 	defer func() { nowFunc = time.Now }()
 
 	// Payment at 2026-11-02T00:30+02:00 = 2026-11-01T22:30 UTC.
-	// In Berlin (UTC+1 in Nov? actually CET = UTC+1) that's 2026-11-01T23:30 Berlin,
+	// November Berlin is CET (UTC+1), so that's 2026-11-01T23:30 Berlin,
 	// i.e. day 2026-11-01, NOT UTC day 2026-11-02.
 	repo.trendRows = []repository.DayPoint{
 		{Day: "2026-11-01", NetSales: 5000, OrderCount: 2},
@@ -293,5 +310,173 @@ func TestHoursAllZeroFill(t *testing.T) {
 		if h.Hour != i || h.OrderCount != 0 {
 			t.Fatalf("hour[%d] = %+v, want {Hour: %d, OrderCount: 0}", i, h, i)
 		}
+	}
+}
+
+func TestTopItemsPopulated(t *testing.T) {
+	repo := newFakeReportsRepository()
+	repo.topItems = []repository.TopItem{
+		{ProductName: "Latte", Quantity: 10, Revenue: repository.Money(4500)},
+		{ProductName: "Cappuccino", Quantity: 5, Revenue: repository.Money(2000)},
+	}
+	svc := NewReportService(repo)
+
+	now := time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return now }
+	defer func() { nowFunc = time.Now }()
+
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	todayStart := time.Date(2026, 11, 3, 0, 0, 0, 0, berlin)
+	wantStart7 := todayStart.AddDate(0, 0, -6)
+	wantTomorrow := todayStart.AddDate(0, 0, 1)
+
+	ctx := auth.WithPrincipal(context.Background(), principalWith("report.sales.read"))
+	summary, err := svc.GetSalesSummary(ctx)
+	if err != nil {
+		t.Fatalf("GetSalesSummary: %v", err)
+	}
+	if len(summary.TopItems) != 2 {
+		t.Fatalf("topItems = %d, want 2", len(summary.TopItems))
+	}
+	if summary.TopItems[0].ProductName != "Latte" || summary.TopItems[0].Quantity != 10 {
+		t.Fatalf("topItems[0] = %+v, want Latte x10", summary.TopItems[0])
+	}
+	if summary.TopItems[1].ProductName != "Cappuccino" || summary.TopItems[1].Quantity != 5 {
+		t.Fatalf("topItems[1] = %+v, want Cappuccino x5", summary.TopItems[1])
+	}
+	// pinned to the trailing-7-day window ending today, limit 5
+	if !repo.lastTopStart.Equal(wantStart7) {
+		t.Fatalf("topItems start = %v, want %v", repo.lastTopStart, wantStart7)
+	}
+	if !repo.lastTopEnd.Equal(wantTomorrow) {
+		t.Fatalf("topItems end = %v, want %v", repo.lastTopEnd, wantTomorrow)
+	}
+	if repo.lastTopLimit != 5 {
+		t.Fatalf("topItems limit = %d, want 5", repo.lastTopLimit)
+	}
+}
+
+func TestHoursTrailingSevenDaysWindow(t *testing.T) {
+	repo := newFakeReportsRepository()
+	repo.hourRows = []repository.HourPoint{
+		{Hour: 10, OrderCount: 4},
+		{Hour: 11, OrderCount: 7},
+	}
+	svc := NewReportService(repo)
+
+	now := time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return now }
+	defer func() { nowFunc = time.Now }()
+
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	todayStart := time.Date(2026, 11, 3, 0, 0, 0, 0, berlin)
+	wantStart7 := todayStart.AddDate(0, 0, -6)
+	wantTomorrow := todayStart.AddDate(0, 0, 1)
+
+	ctx := auth.WithPrincipal(context.Background(), principalWith("report.sales.read"))
+	summary, err := svc.GetSalesSummary(ctx)
+	if err != nil {
+		t.Fatalf("GetSalesSummary: %v", err)
+	}
+	if len(summary.Hours) != 24 {
+		t.Fatalf("hours entries = %d, want 24", len(summary.Hours))
+	}
+	if summary.Hours[10].OrderCount != 4 || summary.Hours[11].OrderCount != 7 {
+		t.Fatalf("hours not aggregated: %+v", summary.Hours)
+	}
+	for h := 0; h < 24; h++ {
+		if summary.Hours[h].Hour != h {
+			t.Fatalf("hours[%d].Hour = %d, want %d", h, summary.Hours[h].Hour, h)
+		}
+	}
+	// pinned to the trailing-7-day window ending today, shop tz
+	if !repo.lastHourStart.Equal(wantStart7) {
+		t.Fatalf("hour start = %v, want %v", repo.lastHourStart, wantStart7)
+	}
+	if !repo.lastHourEnd.Equal(wantTomorrow) {
+		t.Fatalf("hour end = %v, want %v", repo.lastHourEnd, wantTomorrow)
+	}
+	if repo.lastHourTZ != "Europe/Berlin" {
+		t.Fatalf("hour tz = %q, want Europe/Berlin", repo.lastHourTZ)
+	}
+}
+
+func TestAverageOrderValueSignAware(t *testing.T) {
+	// positive half-up
+	if got := averageOrderValue(repository.Money(350), 3); got != 117 {
+		t.Fatalf("averageOrderValue(350, 3) = %d, want 117", got)
+	}
+	// negative half-up, away from zero: -350/3 = -116.66 -> -117
+	if got := averageOrderValue(repository.Money(-350), 3); got != -117 {
+		t.Fatalf("averageOrderValue(-350, 3) = %d, want -117", got)
+	}
+	// negative exact
+	if got := averageOrderValue(repository.Money(-351), 3); got != -117 {
+		t.Fatalf("averageOrderValue(-351, 3) = %d, want -117", got)
+	}
+	// negative below half
+	if got := averageOrderValue(repository.Money(-349), 3); got != -116 {
+		t.Fatalf("averageOrderValue(-349, 3) = %d, want -116", got)
+	}
+	// zero orders
+	if got := averageOrderValue(0, 0); got != 0 {
+		t.Fatalf("averageOrderValue(0, 0) = %d, want 0", got)
+	}
+}
+
+func TestAverageOrderValueNegativeNetViaService(t *testing.T) {
+	repo := newFakeReportsRepository()
+	svc := NewReportService(repo)
+
+	now := time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return now }
+	defer func() { nowFunc = time.Now }()
+
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	todayStart := time.Date(2026, 11, 3, 0, 0, 0, 0, berlin)
+	tomorrow := todayStart.Add(24 * time.Hour)
+	// gross 1000¢, refunds 1500¢ recorded today ⇒ net -500¢ over 3 orders ⇒ -167¢ (sign-aware half-up)
+	repo.periodTotals[keyFor(todayStart, tomorrow)] = repository.PeriodTotals{
+		GrossSales: 1000, Refunds: 1500, RefundCount: 2, OrderCount: 3,
+	}
+
+	ctx := auth.WithPrincipal(context.Background(), principalWith("report.sales.read"))
+	summary, err := svc.GetSalesSummary(ctx)
+	if err != nil {
+		t.Fatalf("GetSalesSummary: %v", err)
+	}
+	if summary.Today.NetSales != -500 {
+		t.Fatalf("today net sales = %d, want -500", summary.Today.NetSales)
+	}
+	if summary.Today.AverageOrderValue != -167 {
+		t.Fatalf("today AOV = %d, want -167 (sign-aware half-up of -500/3)", summary.Today.AverageOrderValue)
+	}
+}
+
+func TestThirtyDayCalendarWindow(t *testing.T) {
+	repo := newFakeReportsRepository()
+	svc := NewReportService(repo)
+
+	now := time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return now }
+	defer func() { nowFunc = time.Now }()
+
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	todayStart := time.Date(2026, 11, 3, 0, 0, 0, 0, berlin)
+	wantStart30 := todayStart.AddDate(0, 0, -29)
+	wantTomorrow := todayStart.AddDate(0, 0, 1)
+
+	ctx := auth.WithPrincipal(context.Background(), principalWith("report.sales.read"))
+	if _, err := svc.GetSalesSummary(ctx); err != nil {
+		t.Fatalf("GetSalesSummary: %v", err)
+	}
+	// refunds and payment split both span the trailing 30 calendar days ending today
+	if !repo.lastRefundStart.Equal(wantStart30) || !repo.lastRefundEnd.Equal(wantTomorrow) {
+		t.Fatalf("refund window = [%v, %v), want [%v, %v)",
+			repo.lastRefundStart, repo.lastRefundEnd, wantStart30, wantTomorrow)
+	}
+	if !repo.lastSplitStart.Equal(wantStart30) || !repo.lastSplitEnd.Equal(wantTomorrow) {
+		t.Fatalf("split window = [%v, %v), want [%v, %v)",
+			repo.lastSplitStart, repo.lastSplitEnd, wantStart30, wantTomorrow)
 	}
 }

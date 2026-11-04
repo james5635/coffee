@@ -170,8 +170,9 @@ type ComplexityRoot struct {
 	}
 
 	RefundSummary struct {
-		Count func(childComplexity int) int
-		Total func(childComplexity int) int
+		Count  func(childComplexity int) int
+		Recent func(childComplexity int) int
+		Total  func(childComplexity int) int
 	}
 
 	SalesSnapshot struct {
@@ -184,16 +185,15 @@ type ComplexityRoot struct {
 	}
 
 	SalesSummary struct {
-		Currency      func(childComplexity int) int
-		Hours         func(childComplexity int) int
-		RecentRefunds func(childComplexity int) int
-		Refunds       func(childComplexity int) int
-		Split         func(childComplexity int) int
-		Timezone      func(childComplexity int) int
-		Today         func(childComplexity int) int
-		TopItems      func(childComplexity int) int
-		Trend         func(childComplexity int) int
-		Yesterday     func(childComplexity int) int
+		Currency  func(childComplexity int) int
+		Hours     func(childComplexity int) int
+		Refunds   func(childComplexity int) int
+		Split     func(childComplexity int) int
+		Timezone  func(childComplexity int) int
+		Today     func(childComplexity int) int
+		TopItems  func(childComplexity int) int
+		Trend     func(childComplexity int) int
+		Yesterday func(childComplexity int) int
 	}
 
 	TopItem struct {
@@ -815,6 +815,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.RefundSummary.Count(childComplexity), true
+	case "RefundSummary.recent":
+		if e.ComplexityRoot.RefundSummary.Recent == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RefundSummary.Recent(childComplexity), true
 	case "RefundSummary.total":
 		if e.ComplexityRoot.RefundSummary.Total == nil {
 			break
@@ -871,12 +877,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.SalesSummary.Hours(childComplexity), true
-	case "SalesSummary.recentRefunds":
-		if e.ComplexityRoot.SalesSummary.RecentRefunds == nil {
-			break
-		}
-
-		return e.ComplexityRoot.SalesSummary.RecentRefunds(childComplexity), true
 	case "SalesSummary.refunds":
 		if e.ComplexityRoot.SalesSummary.Refunds == nil {
 			break
@@ -1279,6 +1279,8 @@ func (ec *executionContext) childFields_RefundSummary(ctx context.Context, field
 		return ec.fieldContext_RefundSummary_count(ctx, field)
 	case "total":
 		return ec.fieldContext_RefundSummary_total(ctx, field)
+	case "recent":
+		return ec.fieldContext_RefundSummary_recent(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type RefundSummary", field.Name)
 }
@@ -1321,8 +1323,6 @@ func (ec *executionContext) childFields_SalesSummary(ctx context.Context, field 
 		return ec.fieldContext_SalesSummary_split(ctx, field)
 	case "refunds":
 		return ec.fieldContext_SalesSummary_refunds(ctx, field)
-	case "recentRefunds":
-		return ec.fieldContext_SalesSummary_recentRefunds(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type SalesSummary", field.Name)
 }
@@ -3985,6 +3985,38 @@ func (ec *executionContext) fieldContext_RefundSummary_total(_ context.Context, 
 	return graphql.NewScalarFieldContext("RefundSummary", field, false, false, "Decimal")
 }
 
+func (ec *executionContext) _RefundSummary_recent(ctx context.Context, field graphql.CollectedField, obj *model.RefundSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RefundSummary_recent(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Recent, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.RefundLine) graphql.Marshaler {
+			return ec.marshalNRefundLine2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundLineᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RefundSummary_recent(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RefundSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RefundLine(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SalesSnapshot_netSales(ctx context.Context, field graphql.CollectedField, obj *model.SalesSnapshot) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4388,38 +4420,6 @@ func (ec *executionContext) fieldContext_SalesSummary_refunds(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return ec.childFields_RefundSummary(ctx, field)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _SalesSummary_recentRefunds(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.fieldContext_SalesSummary_recentRefunds(ctx, field)
-		},
-		func(ctx context.Context) (any, error) {
-			return obj.RecentRefunds, nil
-		},
-		nil,
-		func(ctx context.Context, selections ast.SelectionSet, v []*model.RefundLine) graphql.Marshaler {
-			return ec.marshalNRefundLine2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundLineᚄ(ctx, selections, v)
-		},
-		true,
-		true,
-	)
-}
-func (ec *executionContext) fieldContext_SalesSummary_recentRefunds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "SalesSummary",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return ec.childFields_RefundLine(ctx, field)
 		},
 	}
 	return fc, nil
@@ -6754,6 +6754,11 @@ func (ec *executionContext) _RefundSummary(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "recent":
+			out.Values[i] = ec._RefundSummary_recent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6882,11 +6887,6 @@ func (ec *executionContext) _SalesSummary(ctx context.Context, sel ast.Selection
 			}
 		case "refunds":
 			out.Values[i] = ec._SalesSummary_refunds(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "recentRefunds":
-			out.Values[i] = ec._SalesSummary_recentRefunds(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

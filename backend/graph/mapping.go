@@ -170,14 +170,22 @@ func graphRefundLine(r repository.RefundLine) *model.RefundLine {
 	}
 }
 
-func graphRefundSummary(r repository.RefundTotals) *model.RefundSummary {
+func graphRefundSummary(r repository.RefundTotals, recent []repository.RefundLine) *model.RefundSummary {
+	recentLines := make([]*model.RefundLine, 0, len(recent))
+	for _, l := range recent {
+		recentLines = append(recentLines, graphRefundLine(l))
+	}
 	return &model.RefundSummary{
-		Count: int32(r.Count),
-		Total: scalar.Decimal(repository.FormatMoney(r.Total)),
+		Count:  int32(r.Count),
+		Total:  scalar.Decimal(repository.FormatMoney(r.Total)),
+		Recent: recentLines,
 	}
 }
 
 // graphSalesSummary maps a repository.SalesSummary to the GraphQL SalesSummary.
+// Note: repository.SalesSummary keeps RecentRefunds internally; the GraphQL
+// surface nests it under RefundSummary.recent per the spec, so mapping adapts
+// here and RecentRefunds is not set on SalesSummary directly.
 func graphSalesSummary(s repository.SalesSummary) *model.SalesSummary {
 	today := graphSalesSnapshot(s.Today)
 	yesterday := graphSalesSnapshot(s.Yesterday)
@@ -197,16 +205,11 @@ func graphSalesSummary(s repository.SalesSummary) *model.SalesSummary {
 	for _, p := range s.Split {
 		split = append(split, graphPaymentMethodPoint(p))
 	}
-	recentRefunds := make([]*model.RefundLine, 0, len(s.RecentRefunds))
-	for _, r := range s.RecentRefunds {
-		recentRefunds = append(recentRefunds, graphRefundLine(r))
-	}
 	return &model.SalesSummary{
 		Currency: s.Currency, Timezone: s.Timezone,
 		Today: today, Yesterday: yesterday,
 		Trend: trend, TopItems: topItems, Hours: hours, Split: split,
-		Refunds:       graphRefundSummary(s.Refunds),
-		RecentRefunds: recentRefunds,
+		Refunds: graphRefundSummary(s.Refunds, s.RecentRefunds),
 	}
 }
 

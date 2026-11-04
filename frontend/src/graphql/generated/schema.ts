@@ -260,6 +260,7 @@ export type RefundLine = {
 export type RefundSummary = {
   __typename?: 'RefundSummary';
   count: Scalars['Int']['output'];
+  recent: Array<RefundLine>;
   total: Scalars['Decimal']['output'];
 };
 
@@ -277,7 +278,6 @@ export type SalesSummary = {
   __typename?: 'SalesSummary';
   currency: Scalars['String']['output'];
   hours: Array<HourPoint>;
-  recentRefunds: Array<RefundLine>;
   refunds: RefundSummary;
   split: Array<PaymentMethodPoint>;
   timezone: Scalars['String']['output'];

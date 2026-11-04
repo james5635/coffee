@@ -53,7 +53,10 @@ func (s *reportService) GetSalesSummary(ctx context.Context) (repository.SalesSu
 	)
 	tomorrowStart := todayStart.AddDate(0, 0, 1)
 	yesterdayStart := todayStart.AddDate(0, 0, -1)
-	start30 := now.Add(-30 * 24 * time.Hour)
+	// trailing 7 calendar days ending today: [todayStart-6, tomorrowStart)
+	start7 := todayStart.AddDate(0, 0, -6)
+	// trailing 30 calendar days ending today: [todayStart-29, tomorrowStart)
+	start30 := todayStart.AddDate(0, 0, -29)
 
 	today, err := s.repository.PeriodTotals(ctx, todayStart, tomorrowStart)
 	if err != nil {
@@ -69,12 +72,20 @@ func (s *reportService) GetSalesSummary(ctx context.Context) (repository.SalesSu
 		return repository.SalesSummary{}, fmt.Errorf("sales trend: %w", err)
 	}
 
-	hours, err := s.repository.HourlyOrderCounts(ctx, todayStart, tomorrowStart, tzName)
+	// Top 5 items over the trailing 7 calendar days ending today.
+	topItems, err := s.repository.TopItems(ctx, start7, tomorrowStart, 5)
+	if err != nil {
+		return repository.SalesSummary{}, fmt.Errorf("top items: %w", err)
+	}
+
+	// Orders by hour over the trailing 7 calendar days ending today, zero-filled 0–23.
+	hours, err := s.repository.HourlyOrderCounts(ctx, start7, tomorrowStart, tzName)
 	if err != nil {
 		return repository.SalesSummary{}, fmt.Errorf("hourly order counts: %w", err)
 	}
 
-	refunds, err := s.repository.RefundTotals(ctx, start30, now)
+	// Refunds and payment split over the trailing 30 calendar days ending today.
+	refunds, err := s.repository.RefundTotals(ctx, start30, tomorrowStart)
 	if err != nil {
 		return repository.SalesSummary{}, fmt.Errorf("refund totals: %w", err)
 	}
@@ -84,7 +95,7 @@ func (s *reportService) GetSalesSummary(ctx context.Context) (repository.SalesSu
 		return repository.SalesSummary{}, fmt.Errorf("recent refunds: %w", err)
 	}
 
-	split, err := s.repository.PaymentMethodTotals(ctx, start30, now)
+	split, err := s.repository.PaymentMethodTotals(ctx, start30, tomorrowStart)
 	if err != nil {
 		return repository.SalesSummary{}, fmt.Errorf("payment method totals: %w", err)
 	}
@@ -95,6 +106,7 @@ func (s *reportService) GetSalesSummary(ctx context.Context) (repository.SalesSu
 		Today:     snapshot(today),
 		Yesterday: snapshot(yesterday),
 		Trend:     trend,
+		TopItems:  topItems,
 		Hours:     expandHours(hours),
 		Refunds:   refunds,
 		RecentRefunds: recentRefunds,
@@ -115,12 +127,26 @@ func snapshot(p repository.PeriodTotals) repository.SalesSnapshot {
 }
 
 // averageOrderValue returns net/orderCount in cents, rounded half-up.
-// Zero orders ⇒ 0¢.
+// The rounding is sign-aware: a remainder of at least half the divisor rounds
+// away from zero, so negative nets round correctly (e.g. -350¢/3 → -117¢,
+// not -116¢). Zero orders ⇒ 0¢. Integer math only — no floats.
 func averageOrderValue(net repository.Money, orders int) repository.Money {
 	if orders <= 0 {
 		return 0
 	}
-	return repository.Money((int64(net) + int64(orders)/2) / int64(orders))
+	n := int64(net)
+	o := int64(orders)
+	q := n / o // truncates toward zero
+	r := n % o // same sign as n
+	// half-up: a remainder of at least half the divisor rounds away from zero
+	if 2*r >= o || 2*r <= -o {
+		if n >= 0 {
+			q++
+		} else {
+			q--
+		}
+	}
+	return repository.Money(q)
 }
 
 // expandHours returns a fixed 0–23 slice, zero-filling hours absent from rows.

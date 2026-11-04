@@ -48,8 +48,7 @@ function makeSummary(overrides: Partial<SalesSummaryData> = {}): SalesSummaryDat
       { method: PaymentMethod.Cash, count: 20, amount: '300.00' },
       { method: PaymentMethod.Card, count: 22, amount: '900.00' },
     ],
-    refunds: { count: 3, total: '45.00' },
-    recentRefunds: [{ orderNumber: '1001', amount: '12.00', createdAt: '2026-11-03T10:00:00Z' }],
+    refunds: { count: 3, total: '45.00', recent: [{ orderNumber: '1001', amount: '12.00', createdAt: '2026-11-03T10:00:00Z' }] },
     ...overrides,
   };
 }
@@ -147,8 +146,7 @@ describe('ReportsComponent', () => {
       topItems: [],
       hours: [],
       split: [],
-      refunds: { count: 0, total: '0.00' },
-      recentRefunds: [],
+      refunds: { count: 0, total: '0.00', recent: [] },
     });
     const fixture = await createComponent();
 

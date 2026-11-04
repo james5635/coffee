@@ -40,11 +40,11 @@ query SalesSummary {
     refunds {
       count
       total
-    }
-    recentRefunds {
-      orderNumber
-      amount
-      createdAt
+      recent {
+        orderNumber
+        amount
+        createdAt
+      }
     }
   }
 }

@@ -161,8 +161,9 @@ type RefundLine struct {
 }
 
 type RefundSummary struct {
-	Count int32          `json:"count"`
-	Total scalar.Decimal `json:"total"`
+	Count  int32          `json:"count"`
+	Total  scalar.Decimal `json:"total"`
+	Recent []*RefundLine  `json:"recent"`
 }
 
 type SalesSnapshot struct {
@@ -175,16 +176,15 @@ type SalesSnapshot struct {
 }
 
 type SalesSummary struct {
-	Currency      string                `json:"currency"`
-	Timezone      string                `json:"timezone"`
-	Today         *SalesSnapshot        `json:"today"`
-	Yesterday     *SalesSnapshot        `json:"yesterday"`
-	Trend         []*DayPoint           `json:"trend"`
-	TopItems      []*TopItem            `json:"topItems"`
-	Hours         []*HourPoint          `json:"hours"`
-	Split         []*PaymentMethodPoint `json:"split"`
-	Refunds       *RefundSummary        `json:"refunds"`
-	RecentRefunds []*RefundLine         `json:"recentRefunds"`
+	Currency  string                `json:"currency"`
+	Timezone  string                `json:"timezone"`
+	Today     *SalesSnapshot        `json:"today"`
+	Yesterday *SalesSnapshot        `json:"yesterday"`
+	Trend     []*DayPoint           `json:"trend"`
+	TopItems  []*TopItem            `json:"topItems"`
+	Hours     []*HourPoint          `json:"hours"`
+	Split     []*PaymentMethodPoint `json:"split"`
+	Refunds   *RefundSummary        `json:"refunds"`
 }
 
 type TopItem struct {
