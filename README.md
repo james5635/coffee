@@ -1,6 +1,6 @@
 # Coffee Shop
 
-A coffee shop operations app with a Go GraphQL API, PostgreSQL storage, and an Angular frontend. The backend provides public menu reads, guest and authenticated ordering, the preparation queue and status transitions, offline payment/refund recording, and the auth token operations (`login`, `refreshToken`, `logout`). The Angular frontend ships the Phase 1 auth flow (in-memory access token, HttpOnly refresh cookie, boot restore, guard) and the Phase 2 product screens on top of it: menu browsing, ordering/checkout, order tracking, preparation queue, and payments/refunds.
+A coffee shop operations app with a Go GraphQL API, PostgreSQL storage, and an Angular frontend. The backend provides public menu reads, guest and authenticated ordering, the preparation queue and status transitions, offline payment/refund recording, and the auth token operations (`login`, `refreshToken`, `logout`). The Angular frontend ships the Phase 1 auth flow (in-memory access token, HttpOnly refresh cookie, boot restore, guard) and the product screens on top of it: menu browsing, ordering/checkout, order tracking, preparation queue, payments/refunds, and the staff sales reports dashboard (`/reports`).
 
 ## Stack
 
@@ -17,12 +17,13 @@ The GraphQL schema is in [`backend/graph/schema.graphqls`](backend/graph/schema.
 - Guest order placement and authenticated customer/staff order placement. Prices, line totals, and tax are calculated by the server and saved as order snapshots.
 - Preparation queue and validated order status transitions (including pending-order acceptance by manager/owner).
 - Recording offline payments and refunds against order balances. These mutations record events; they do not charge a card or call a payment provider.
+- Staff sales reports and dashboard (`salesSummary`): today/yesterday snapshots, a 45-day trend, top items, hourly and payment-method splits, and refunds. Gated by the `report.sales.read` permission; protected operations fail closed without a valid principal.
 
 The database includes broader coffee shop tables, but database support does not imply that an API workflow exists for every area. Inventory operations and staff administration workflows are not implemented yet; the frontend does not build against those operations.
 
 ### Authorization status
 
-Protected service operations require a principal and permission set in the request context; the context helpers and checks are implemented and the auth token operations (`login`, `refreshToken`, `logout`) are wired. The server does not yet have authentication middleware that supplies a principal to every protected operation, so protected order/payment operations therefore fail closed for API requests until that integration is added. Public menu reads and guest order creation remain available.
+Protected service operations require a principal and permission set in the request context; the bearer authentication middleware (`backend/main.go:98`) populates the principal from the `Authorization: Bearer <token>` header, and services enforce permissions there. Protected operations therefore fail closed when no valid principal is present. Public menu reads and guest order creation remain available exceptions (no principal required).
 
 ## Run locally
 
@@ -47,6 +48,8 @@ task dev
 The frontend is served at [http://localhost:4200](http://localhost:4200). The GraphQL endpoint is [http://localhost:8080/query](http://localhost:8080/query), with the GraphQL playground at [http://localhost:8080](http://localhost:8080).
 
 The local seed creates a shop settings row, sample categories/products, modifier choices, and demo inventory. Its tax rate is zero. Migrations and seeds are in `backend/db/migrations/` and `backend/db/seeds/`.
+
+The seed is deterministic and idempotent: running `task seed` repeatedly deletes and re-inserts the `report-demo` dataset, so order/payment/refund counts stay identical across runs (safe to run repeatedly). Seeded staff demo accounts for the reports dashboard: `owner@coffee.local` and `manager@coffee.local` (both hold `report.sales.read`); `cashier@coffee.local` does not. All passwords are `password123`.
 
 ## Development tasks
 
@@ -84,7 +87,7 @@ The planned role model is Owner/Admin, Manager, Cashier, Barista, and Customer. 
 
 Phase 2 shipped the product frontend against the implemented backend operations: the public menu, ordering/checkout, preparation queue, payments/refunds, and the Phase 1 auth screens. Staff screens hide actions the current user cannot perform and handle `FORBIDDEN` from the backend; the backend remains the permission boundary.
 
-Staff administration workflows (user/role administration, menu/product management, inventory operations, sales reports) are not implemented yet, and the frontend does not build against those operations.
+Staff administration workflows (user/role administration, menu/product management, inventory operations) are not implemented yet, and the frontend does not build against those operations.
 
 ## License
 
