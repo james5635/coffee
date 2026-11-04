@@ -1,32 +1,20 @@
-import { Component, computed, HostListener, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { AuthService } from '../../services/auth.service';
+import { Component, computed, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { AuthStateService } from '../../services/auth-state.service';
 
 /**
- * Signed-in landing page and workspace navigation.
- *
- * The workspace navigation lives in a left sidebar (static on desktop,
- * off-canvas drawer on mobile). Every user can reach the public menu and
- * guest checkout. Staff links are shown from the decoded access-token
- * permissions when that claim is present; when it is absent the design's
- * authentication-only fallback applies and the backend remains the permission
- * boundary. The auth guard protects the route itself, and the staff screens
- * protect their own actions.
+ * Signed-in landing page: welcome + workspace cards. The shared left-sidebar
+ * chrome lives in {@link WorkspaceLayoutComponent}; this component is the
+ * page content only.
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.css',
 })
 export class ShellComponent {
-  private readonly auth = inject(AuthService);
   private readonly authState = inject(AuthStateService);
-  private readonly router = inject(Router);
-
-  /** Sidebar drawer state (mobile only; static on desktop). */
-  protected readonly sidebarOpen = signal(false);
 
   /** Baristas and owners can open the preparation queue. */
   protected readonly canViewPrepQueue = computed(() =>
@@ -44,22 +32,4 @@ export class ShellComponent {
   protected readonly canViewReports = computed(() =>
     this.authState.hasPermission('report.sales.read'),
   );
-
-  protected toggleSidebar(): void {
-    this.sidebarOpen.update((open) => !open);
-  }
-
-  protected closeSidebar(): void {
-    this.sidebarOpen.set(false);
-  }
-
-  @HostListener('document:keydown.escape')
-  protected onEscape(): void {
-    this.closeSidebar();
-  }
-
-  protected async logout(): Promise<void> {
-    await this.auth.logout();
-    await this.router.navigate(['/login']);
-  }
 }
