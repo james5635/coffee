@@ -116,11 +116,11 @@ WHERE u.email IN (
 )
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
--- Product photos for the public menu (repo-bundled flat illustrations).
-UPDATE products SET image_url = '/products/espresso.svg' WHERE sku = 'DRINK-ESP';
-UPDATE products SET image_url = '/products/cappuccino.svg' WHERE sku = 'DRINK-CAP';
-UPDATE products SET image_url = '/products/black-tea.svg' WHERE sku = 'DRINK-TEA';
-UPDATE products SET image_url = '/products/butter-croissant.svg' WHERE sku = 'FOOD-CRO';
+-- Product photos for the public menu (Unsplash photos; see assets/products/ATTRIBUTION.md).
+UPDATE products SET image_url = '/products/espresso.jpg' WHERE sku = 'DRINK-ESP';
+UPDATE products SET image_url = '/products/cappuccino.jpg' WHERE sku = 'DRINK-CAP';
+UPDATE products SET image_url = '/products/black-tea.jpg' WHERE sku = 'DRINK-TEA';
+UPDATE products SET image_url = '/products/butter-croissant.jpg' WHERE sku = 'FOOD-CRO';
 
 -- +goose Down
 WITH deleted_movements AS (
