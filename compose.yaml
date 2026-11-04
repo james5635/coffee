@@ -15,6 +15,24 @@ services:
       timeout: 5s
       retries: 5
 
+  seaweedfs:
+    # Object storage for images/files (product photos, future uploads).
+    # All-in-one `weed mini`; S3 endpoint on 8333, path-style URLs.
+    # Credentials: anonymous Read (public product images) + admin/secret
+    # (signed writes, dev-only) — see seaweedfs/s3.json.
+    image: chrislusf/seaweedfs
+    command: mini -dir=/data -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - "8333:8333"
+    volumes:
+      - weed-data:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null -w '%{http_code}\\n' http://localhost:8333/ | grep -qE '200|403|404'"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   backend:
     build:
       context: ./backend
@@ -48,5 +66,6 @@ services:
 
 volumes:
   postgres_data:
+  weed-data:
   backend_go_modules:
   frontend_node_modules:

@@ -34,6 +34,8 @@ Install dependencies, start PostgreSQL, and prepare the schema and sample menu d
 ```sh
 task install
 task postgres:detached
+task seaweedfs:detached   # object storage for images/files (S3 API on :8333)
+task objects:seed         # create the bucket and upload the bundled product images
 task migrate
 task seed
 ```
@@ -48,6 +50,8 @@ The frontend is served at [http://localhost:4200](http://localhost:4200). The Gr
 
 The local seed creates a shop settings row, sample categories/products, modifier choices, and demo inventory. Its tax rate is zero. Migrations and seeds are in `backend/db/migrations/` and `backend/db/seeds/`.
 
+The frontend dev proxy serves the bundled assets from object storage: requests to `/products/*` are rewritten to the SeaweedFS bucket (`http://localhost:8333/my-bucket/products/*`), so product images work from any host that can reach the dev server (including LAN) without signing. Production deployments must add the same path-style rewrite (reverse proxy or SSR host).
+
 The seed is deterministic and idempotent: running `task seed` repeatedly deletes and re-inserts the `report-demo` dataset, so order/payment/refund counts stay identical across runs (safe to run repeatedly). Seeded staff demo accounts for the reports dashboard: `owner@coffee.local` and `manager@coffee.local` (both hold `report.sales.read`); `cashier@coffee.local` does not. All passwords are `password123`.
 
 ## Development tasks
@@ -57,9 +61,14 @@ Run `task --list` to see available workflows. Common tasks include:
 ```sh
 task generate       # regenerate sqlc database code
 task build          # build backend and frontend
+task verify         # run the full backend+frontend verification gate
 task migrate        # apply Goose migrations
 task seed           # apply sample data
+task seaweedfs:detached  # start SeaweedFS (S3 object storage) in the background
+task objects:seed   # upload bundled assets to the SeaweedFS bucket
 ```
+
+Object storage: [SeaweedFS](https://github.com/seaweedfs/seaweedfs) runs all-in-one via `weed mini` in Docker Compose (`compose.yaml`, service `seaweedfs`), exposing the S3 API on `:8333`. The `my-bucket` bucket holds the product images under `products/` (source of truth: `assets/products/` in this repo). `seaweedfs/s3.json` configures two identities: anonymous Read (public product images load unsigned in `<img>` tags) and admin `admin/secret` with full access (signed writes used by `task objects:seed`; dev credentials only — replace for production). All credentials are local-development only, matching the seeded database users and demo passwords.
 
 After changing the GraphQL schema, regenerate gqlgen output from `backend/`:
 

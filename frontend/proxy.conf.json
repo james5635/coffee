@@ -3,5 +3,13 @@
     "target": "http://localhost:8080",
     "changeOrigin": true,
     "secure": false
+  },
+  "/products": {
+    "target": "http://localhost:8333",
+    "changeOrigin": true,
+    "secure": false,
+    "pathRewrite": {
+      "^/products": "/my-bucket/products"
+    }
   }
 }

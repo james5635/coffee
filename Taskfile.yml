@@ -63,6 +63,22 @@ tasks:
     cmds:
       - docker compose up --detach postgres
 
+  seaweedfs:detached:
+    desc: Start SeaweedFS (S3 object storage) from Docker Compose in the background
+    cmds:
+      - docker compose up --detach seaweedfs
+      - docker compose ps seaweedfs
+
+  objects:seed:
+    desc: Upload bundled assets (product images) to the SeaweedFS bucket
+    deps: [seaweedfs:detached]
+    env:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: secret
+    cmds:
+      - aws s3 mb s3://my-bucket --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}" || true
+      - aws s3 cp assets/products s3://my-bucket/products --recursive --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}"
+
   frontend:
     desc: Start the Angular development server
     dir: frontend
