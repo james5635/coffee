@@ -205,6 +205,15 @@ func (r *queryResolver) PreparationQueue(ctx context.Context) ([]*model.Order, e
 	return result, nil
 }
 
+// SalesSummary is the resolver for the salesSummary field.
+func (r *queryResolver) SalesSummary(ctx context.Context) (*model.SalesSummary, error) {
+	summary, err := r.Reports.GetSalesSummary(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphSalesSummary(summary), nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 

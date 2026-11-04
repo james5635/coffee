@@ -12,4 +12,5 @@ type Resolver struct {
 	Orders   service.OrderService
 	Payments service.PaymentService
 	Auth     service.AuthService
+	Reports  service.ReportsService
 }

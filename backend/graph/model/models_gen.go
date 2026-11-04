@@ -26,6 +26,17 @@ type Category struct {
 	SortOrder   int32  `json:"sortOrder"`
 }
 
+type DayPoint struct {
+	Day        string         `json:"day"`
+	NetSales   scalar.Decimal `json:"netSales"`
+	OrderCount int32          `json:"orderCount"`
+}
+
+type HourPoint struct {
+	Hour       int32 `json:"hour"`
+	OrderCount int32 `json:"orderCount"`
+}
+
 type IssueRefundInput struct {
 	OrderID           string         `json:"orderId"`
 	Method            PaymentMethod  `json:"method"`
@@ -102,6 +113,12 @@ type Payment struct {
 	SettledAt         *time.Time     `json:"settledAt,omitempty"`
 }
 
+type PaymentMethodPoint struct {
+	Method PaymentMethod  `json:"method"`
+	Count  int32          `json:"count"`
+	Amount scalar.Decimal `json:"amount"`
+}
+
 type PlaceOrderInput struct {
 	OrderType     OrderType              `json:"orderType"`
 	CustomerName  *string                `json:"customerName,omitempty"`
@@ -135,6 +152,45 @@ type RecordPaymentInput struct {
 	Method            PaymentMethod  `json:"method"`
 	Amount            scalar.Decimal `json:"amount"`
 	ExternalReference *string        `json:"externalReference,omitempty"`
+}
+
+type RefundLine struct {
+	OrderNumber string         `json:"orderNumber"`
+	Amount      scalar.Decimal `json:"amount"`
+	CreatedAt   time.Time      `json:"createdAt"`
+}
+
+type RefundSummary struct {
+	Count int32          `json:"count"`
+	Total scalar.Decimal `json:"total"`
+}
+
+type SalesSnapshot struct {
+	NetSales          scalar.Decimal `json:"netSales"`
+	GrossSales        scalar.Decimal `json:"grossSales"`
+	OrderCount        int32          `json:"orderCount"`
+	AverageOrderValue scalar.Decimal `json:"averageOrderValue"`
+	RefundCount       int32          `json:"refundCount"`
+	RefundTotal       scalar.Decimal `json:"refundTotal"`
+}
+
+type SalesSummary struct {
+	Currency      string                `json:"currency"`
+	Timezone      string                `json:"timezone"`
+	Today         *SalesSnapshot        `json:"today"`
+	Yesterday     *SalesSnapshot        `json:"yesterday"`
+	Trend         []*DayPoint           `json:"trend"`
+	TopItems      []*TopItem            `json:"topItems"`
+	Hours         []*HourPoint          `json:"hours"`
+	Split         []*PaymentMethodPoint `json:"split"`
+	Refunds       *RefundSummary        `json:"refunds"`
+	RecentRefunds []*RefundLine         `json:"recentRefunds"`
+}
+
+type TopItem struct {
+	ProductName string         `json:"productName"`
+	Quantity    int32          `json:"quantity"`
+	Revenue     scalar.Decimal `json:"revenue"`
 }
 
 type OrderStatus string

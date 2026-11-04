@@ -74,6 +74,7 @@ func main() {
 		Orders:   service.NewOrderService(store),
 		Payments: service.NewPaymentService(store),
 		Auth:     authService,
+		Reports:  service.NewReportService(store),
 	}
 
 	router := gin.Default()

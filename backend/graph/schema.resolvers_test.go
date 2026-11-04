@@ -3,8 +3,12 @@ package graph
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"testing"
+	"time"
 
+	"github.com/james5635/coffee/backend/repository"
 	"github.com/james5635/coffee/backend/service"
 	"github.com/james5635/coffee/backend/utils/auth"
 )
@@ -139,5 +143,132 @@ func TestLogoutResolverPropagatesServiceError(t *testing.T) {
 
 	if _, err := r.Logout(context.Background()); !errors.Is(err, service.ErrUnauthenticated) {
 		t.Errorf("Logout: expected %v, got %v", service.ErrUnauthenticated, err)
+	}
+}
+
+// fakeReportsService is a test double for service.ReportsService used by the
+// GraphQL resolver tests.
+type fakeReportsService struct {
+	summary repository.SalesSummary
+	err     error
+}
+
+func (f *fakeReportsService) GetSalesSummary(ctx context.Context) (repository.SalesSummary, error) {
+	return f.summary, f.err
+}
+
+func TestSalesSummaryResolverMapsPayload(t *testing.T) {
+	svc := &fakeReportsService{
+		summary: repository.SalesSummary{
+			Currency: "USD",
+			Timezone: "UTC",
+			Today: repository.SalesSnapshot{
+				NetSales:          repository.Money(1299),
+				GrossSales:        repository.Money(1500),
+				OrderCount:        2,
+				AverageOrderValue: repository.Money(650),
+				RefundCount:       1,
+				RefundTotal:       repository.Money(201),
+			},
+			Yesterday: repository.SalesSnapshot{
+				NetSales:          repository.Money(1100),
+				GrossSales:        repository.Money(1300),
+				OrderCount:        1,
+				AverageOrderValue: repository.Money(1100),
+				RefundCount:       0,
+				RefundTotal:       0,
+			},
+			Trend: []repository.DayPoint{
+				{Day: "2026-11-01", NetSales: repository.Money(1299), OrderCount: 3},
+			},
+			TopItems: []repository.TopItem{
+				{ProductName: "Latte", Quantity: 5, Revenue: repository.Money(2495)},
+			},
+			Hours: []repository.HourPoint{
+				{Hour: 14, OrderCount: 7},
+			},
+			Split: []repository.PaymentMethodPoint{
+				{Method: repository.PaymentCard, Count: 4, Amount: repository.Money(5000)},
+			},
+			Refunds: repository.RefundTotals{
+				Count: 2,
+				Total: repository.Money(950),
+			},
+			RecentRefunds: []repository.RefundLine{
+				{OrderNumber: 42, Amount: repository.Money(500), CreatedAt: time.Date(2026, 11, 1, 14, 30, 0, 0, time.UTC)},
+			},
+		},
+	}
+	r := &queryResolver{&Resolver{Reports: svc}}
+
+	payload, err := r.SalesSummary(context.Background())
+	if err != nil {
+		t.Fatalf("SalesSummary: %v", err)
+	}
+	if payload.Currency != "USD" {
+		t.Errorf("Currency = %q, want %q", payload.Currency, "USD")
+	}
+	if payload.Timezone != "UTC" {
+		t.Errorf("Timezone = %q, want %q", payload.Timezone, "UTC")
+	}
+	if payload.Today.NetSales != "12.99" {
+		t.Errorf("Today.NetSales = %q, want %q", payload.Today.NetSales, "12.99")
+	}
+	if payload.Today.GrossSales != "15.00" {
+		t.Errorf("Today.GrossSales = %q, want %q", payload.Today.GrossSales, "15.00")
+	}
+	if payload.Today.OrderCount != 2 {
+		t.Errorf("Today.OrderCount = %d, want 2", payload.Today.OrderCount)
+	}
+	if payload.Today.AverageOrderValue != "6.50" {
+		t.Errorf("Today.AverageOrderValue = %q, want %q", payload.Today.AverageOrderValue, "6.50")
+	}
+	if payload.Today.RefundCount != 1 {
+		t.Errorf("Today.RefundCount = %d, want 1", payload.Today.RefundCount)
+	}
+	if payload.Today.RefundTotal != "2.01" {
+		t.Errorf("Today.RefundTotal = %q, want %q", payload.Today.RefundTotal, "2.01")
+	}
+	if payload.Yesterday.NetSales != "11.00" {
+		t.Errorf("Yesterday.NetSales = %q, want %q", payload.Yesterday.NetSales, "11.00")
+	}
+	if len(payload.Trend) != 1 || payload.Trend[0].Day != "2026-11-01" || payload.Trend[0].NetSales != "12.99" || payload.Trend[0].OrderCount != 3 {
+		t.Errorf("Trend = %+v, want day 2026-11-01 netSales 12.99 orders 3", payload.Trend)
+	}
+	if len(payload.TopItems) != 1 || payload.TopItems[0].ProductName != "Latte" || payload.TopItems[0].Quantity != 5 || payload.TopItems[0].Revenue != "24.95" {
+		t.Errorf("TopItems = %+v, want Latte x5 revenue 24.95", payload.TopItems)
+	}
+	if len(payload.Hours) != 1 || payload.Hours[0].Hour != 14 || payload.Hours[0].OrderCount != 7 {
+		t.Errorf("Hours = %+v, want hour 14 count 7", payload.Hours)
+	}
+	if len(payload.Split) != 1 || payload.Split[0].Method != "CARD" || payload.Split[0].Count != 4 || payload.Split[0].Amount != "50.00" {
+		t.Errorf("Split = %+v, want CARD x4 amount 50.00", payload.Split)
+	}
+	if payload.Refunds.Count != 2 || payload.Refunds.Total != "9.50" {
+		t.Errorf("Refunds = %+v, want count 2 total 9.50", payload.Refunds)
+	}
+	if len(payload.RecentRefunds) != 1 || payload.RecentRefunds[0].OrderNumber != "42" || payload.RecentRefunds[0].Amount != "5.00" {
+		t.Errorf("RecentRefunds = %+v, want orderNumber 42 amount 5.00", payload.RecentRefunds)
+	}
+	wantCreatedAt := time.Date(2026, 11, 1, 14, 30, 0, 0, time.UTC)
+	if !payload.RecentRefunds[0].CreatedAt.Equal(wantCreatedAt) {
+		t.Errorf("RecentRefunds[0].CreatedAt = %v, want %v", payload.RecentRefunds[0].CreatedAt, wantCreatedAt)
+	}
+}
+
+func TestSalesSummaryResolverPropagatesForbidden(t *testing.T) {
+	svc := &fakeReportsService{err: fmt.Errorf("denied: %w", service.ErrForbidden)}
+	r := &queryResolver{&Resolver{Reports: svc}}
+
+	_, err := r.SalesSummary(context.Background())
+	if !errors.Is(err, service.ErrForbidden) {
+		t.Errorf("SalesSummary: expected %v, got %v", service.ErrForbidden, err)
+	}
+
+	presenter := ErrorPresenter(slog.Default())
+	gqlErr := presenter(context.Background(), err)
+	code, _ := gqlErr.Extensions["code"].(string)
+	if code != "FORBIDDEN" {
+		t.Errorf("extensions.code = %q, want %q", code, "FORBIDDEN")
 	}
 }

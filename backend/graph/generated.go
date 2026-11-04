@@ -52,6 +52,17 @@ type ComplexityRoot struct {
 		SortOrder   func(childComplexity int) int
 	}
 
+	DayPoint struct {
+		Day        func(childComplexity int) int
+		NetSales   func(childComplexity int) int
+		OrderCount func(childComplexity int) int
+	}
+
+	HourPoint struct {
+		Hour       func(childComplexity int) int
+		OrderCount func(childComplexity int) int
+	}
+
 	Modifier struct {
 		ID         func(childComplexity int) int
 		Name       func(childComplexity int) int
@@ -128,6 +139,12 @@ type ComplexityRoot struct {
 		Status            func(childComplexity int) int
 	}
 
+	PaymentMethodPoint struct {
+		Amount func(childComplexity int) int
+		Count  func(childComplexity int) int
+		Method func(childComplexity int) int
+	}
+
 	Product struct {
 		CategoryID     func(childComplexity int) int
 		Description    func(childComplexity int) int
@@ -143,6 +160,46 @@ type ComplexityRoot struct {
 		Order            func(childComplexity int, id string) int
 		PreparationQueue func(childComplexity int) int
 		Products         func(childComplexity int, categoryID *string) int
+		SalesSummary     func(childComplexity int) int
+	}
+
+	RefundLine struct {
+		Amount      func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		OrderNumber func(childComplexity int) int
+	}
+
+	RefundSummary struct {
+		Count func(childComplexity int) int
+		Total func(childComplexity int) int
+	}
+
+	SalesSnapshot struct {
+		AverageOrderValue func(childComplexity int) int
+		GrossSales        func(childComplexity int) int
+		NetSales          func(childComplexity int) int
+		OrderCount        func(childComplexity int) int
+		RefundCount       func(childComplexity int) int
+		RefundTotal       func(childComplexity int) int
+	}
+
+	SalesSummary struct {
+		Currency      func(childComplexity int) int
+		Hours         func(childComplexity int) int
+		RecentRefunds func(childComplexity int) int
+		Refunds       func(childComplexity int) int
+		Split         func(childComplexity int) int
+		Timezone      func(childComplexity int) int
+		Today         func(childComplexity int) int
+		TopItems      func(childComplexity int) int
+		Trend         func(childComplexity int) int
+		Yesterday     func(childComplexity int) int
+	}
+
+	TopItem struct {
+		ProductName func(childComplexity int) int
+		Quantity    func(childComplexity int) int
+		Revenue     func(childComplexity int) int
 	}
 }
 
@@ -164,6 +221,7 @@ type QueryResolver interface {
 	Products(ctx context.Context, categoryID *string) ([]*model.Product, error)
 	Order(ctx context.Context, id string) (*model.Order, error)
 	PreparationQueue(ctx context.Context) ([]*model.Order, error)
+	SalesSummary(ctx context.Context) (*model.SalesSummary, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -233,6 +291,38 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Category.SortOrder(childComplexity), true
+
+	case "DayPoint.day":
+		if e.ComplexityRoot.DayPoint.Day == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DayPoint.Day(childComplexity), true
+	case "DayPoint.netSales":
+		if e.ComplexityRoot.DayPoint.NetSales == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DayPoint.NetSales(childComplexity), true
+	case "DayPoint.orderCount":
+		if e.ComplexityRoot.DayPoint.OrderCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DayPoint.OrderCount(childComplexity), true
+
+	case "HourPoint.hour":
+		if e.ComplexityRoot.HourPoint.Hour == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HourPoint.Hour(childComplexity), true
+	case "HourPoint.orderCount":
+		if e.ComplexityRoot.HourPoint.OrderCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.HourPoint.OrderCount(childComplexity), true
 
 	case "Modifier.id":
 		if e.ComplexityRoot.Modifier.ID == nil {
@@ -596,6 +686,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Payment.Status(childComplexity), true
 
+	case "PaymentMethodPoint.amount":
+		if e.ComplexityRoot.PaymentMethodPoint.Amount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PaymentMethodPoint.Amount(childComplexity), true
+	case "PaymentMethodPoint.count":
+		if e.ComplexityRoot.PaymentMethodPoint.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PaymentMethodPoint.Count(childComplexity), true
+	case "PaymentMethodPoint.method":
+		if e.ComplexityRoot.PaymentMethodPoint.Method == nil {
+			break
+		}
+
+		return e.ComplexityRoot.PaymentMethodPoint.Method(childComplexity), true
+
 	case "Product.categoryId":
 		if e.ComplexityRoot.Product.CategoryID == nil {
 			break
@@ -674,6 +783,161 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Products(childComplexity, args["categoryId"].(*string)), true
+	case "Query.salesSummary":
+		if e.ComplexityRoot.Query.SalesSummary == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SalesSummary(childComplexity), true
+
+	case "RefundLine.amount":
+		if e.ComplexityRoot.RefundLine.Amount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RefundLine.Amount(childComplexity), true
+	case "RefundLine.createdAt":
+		if e.ComplexityRoot.RefundLine.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RefundLine.CreatedAt(childComplexity), true
+	case "RefundLine.orderNumber":
+		if e.ComplexityRoot.RefundLine.OrderNumber == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RefundLine.OrderNumber(childComplexity), true
+
+	case "RefundSummary.count":
+		if e.ComplexityRoot.RefundSummary.Count == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RefundSummary.Count(childComplexity), true
+	case "RefundSummary.total":
+		if e.ComplexityRoot.RefundSummary.Total == nil {
+			break
+		}
+
+		return e.ComplexityRoot.RefundSummary.Total(childComplexity), true
+
+	case "SalesSnapshot.averageOrderValue":
+		if e.ComplexityRoot.SalesSnapshot.AverageOrderValue == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSnapshot.AverageOrderValue(childComplexity), true
+	case "SalesSnapshot.grossSales":
+		if e.ComplexityRoot.SalesSnapshot.GrossSales == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSnapshot.GrossSales(childComplexity), true
+	case "SalesSnapshot.netSales":
+		if e.ComplexityRoot.SalesSnapshot.NetSales == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSnapshot.NetSales(childComplexity), true
+	case "SalesSnapshot.orderCount":
+		if e.ComplexityRoot.SalesSnapshot.OrderCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSnapshot.OrderCount(childComplexity), true
+	case "SalesSnapshot.refundCount":
+		if e.ComplexityRoot.SalesSnapshot.RefundCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSnapshot.RefundCount(childComplexity), true
+	case "SalesSnapshot.refundTotal":
+		if e.ComplexityRoot.SalesSnapshot.RefundTotal == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSnapshot.RefundTotal(childComplexity), true
+
+	case "SalesSummary.currency":
+		if e.ComplexityRoot.SalesSummary.Currency == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Currency(childComplexity), true
+	case "SalesSummary.hours":
+		if e.ComplexityRoot.SalesSummary.Hours == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Hours(childComplexity), true
+	case "SalesSummary.recentRefunds":
+		if e.ComplexityRoot.SalesSummary.RecentRefunds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.RecentRefunds(childComplexity), true
+	case "SalesSummary.refunds":
+		if e.ComplexityRoot.SalesSummary.Refunds == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Refunds(childComplexity), true
+	case "SalesSummary.split":
+		if e.ComplexityRoot.SalesSummary.Split == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Split(childComplexity), true
+	case "SalesSummary.timezone":
+		if e.ComplexityRoot.SalesSummary.Timezone == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Timezone(childComplexity), true
+	case "SalesSummary.today":
+		if e.ComplexityRoot.SalesSummary.Today == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Today(childComplexity), true
+	case "SalesSummary.topItems":
+		if e.ComplexityRoot.SalesSummary.TopItems == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.TopItems(childComplexity), true
+	case "SalesSummary.trend":
+		if e.ComplexityRoot.SalesSummary.Trend == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Trend(childComplexity), true
+	case "SalesSummary.yesterday":
+		if e.ComplexityRoot.SalesSummary.Yesterday == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SalesSummary.Yesterday(childComplexity), true
+
+	case "TopItem.productName":
+		if e.ComplexityRoot.TopItem.ProductName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TopItem.ProductName(childComplexity), true
+	case "TopItem.quantity":
+		if e.ComplexityRoot.TopItem.Quantity == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TopItem.Quantity(childComplexity), true
+	case "TopItem.revenue":
+		if e.ComplexityRoot.TopItem.Revenue == nil {
+			break
+		}
+
+		return e.ComplexityRoot.TopItem.Revenue(childComplexity), true
 
 	}
 	return 0, false
@@ -811,6 +1075,28 @@ func (ec *executionContext) childFields_Category(ctx context.Context, field grap
 	return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
 }
 
+func (ec *executionContext) childFields_DayPoint(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "day":
+		return ec.fieldContext_DayPoint_day(ctx, field)
+	case "netSales":
+		return ec.fieldContext_DayPoint_netSales(ctx, field)
+	case "orderCount":
+		return ec.fieldContext_DayPoint_orderCount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type DayPoint", field.Name)
+}
+
+func (ec *executionContext) childFields_HourPoint(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "hour":
+		return ec.fieldContext_HourPoint_hour(ctx, field)
+	case "orderCount":
+		return ec.fieldContext_HourPoint_orderCount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type HourPoint", field.Name)
+}
+
 func (ec *executionContext) childFields_Modifier(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -943,6 +1229,18 @@ func (ec *executionContext) childFields_Payment(ctx context.Context, field graph
 	return nil, fmt.Errorf("no field named %q was found under type Payment", field.Name)
 }
 
+func (ec *executionContext) childFields_PaymentMethodPoint(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "method":
+		return ec.fieldContext_PaymentMethodPoint_method(ctx, field)
+	case "count":
+		return ec.fieldContext_PaymentMethodPoint_count(ctx, field)
+	case "amount":
+		return ec.fieldContext_PaymentMethodPoint_amount(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type PaymentMethodPoint", field.Name)
+}
+
 func (ec *executionContext) childFields_Product(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -961,6 +1259,84 @@ func (ec *executionContext) childFields_Product(ctx context.Context, field graph
 		return ec.fieldContext_Product_modifierGroups(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type Product", field.Name)
+}
+
+func (ec *executionContext) childFields_RefundLine(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "orderNumber":
+		return ec.fieldContext_RefundLine_orderNumber(ctx, field)
+	case "amount":
+		return ec.fieldContext_RefundLine_amount(ctx, field)
+	case "createdAt":
+		return ec.fieldContext_RefundLine_createdAt(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type RefundLine", field.Name)
+}
+
+func (ec *executionContext) childFields_RefundSummary(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "count":
+		return ec.fieldContext_RefundSummary_count(ctx, field)
+	case "total":
+		return ec.fieldContext_RefundSummary_total(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type RefundSummary", field.Name)
+}
+
+func (ec *executionContext) childFields_SalesSnapshot(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "netSales":
+		return ec.fieldContext_SalesSnapshot_netSales(ctx, field)
+	case "grossSales":
+		return ec.fieldContext_SalesSnapshot_grossSales(ctx, field)
+	case "orderCount":
+		return ec.fieldContext_SalesSnapshot_orderCount(ctx, field)
+	case "averageOrderValue":
+		return ec.fieldContext_SalesSnapshot_averageOrderValue(ctx, field)
+	case "refundCount":
+		return ec.fieldContext_SalesSnapshot_refundCount(ctx, field)
+	case "refundTotal":
+		return ec.fieldContext_SalesSnapshot_refundTotal(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SalesSnapshot", field.Name)
+}
+
+func (ec *executionContext) childFields_SalesSummary(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "currency":
+		return ec.fieldContext_SalesSummary_currency(ctx, field)
+	case "timezone":
+		return ec.fieldContext_SalesSummary_timezone(ctx, field)
+	case "today":
+		return ec.fieldContext_SalesSummary_today(ctx, field)
+	case "yesterday":
+		return ec.fieldContext_SalesSummary_yesterday(ctx, field)
+	case "trend":
+		return ec.fieldContext_SalesSummary_trend(ctx, field)
+	case "topItems":
+		return ec.fieldContext_SalesSummary_topItems(ctx, field)
+	case "hours":
+		return ec.fieldContext_SalesSummary_hours(ctx, field)
+	case "split":
+		return ec.fieldContext_SalesSummary_split(ctx, field)
+	case "refunds":
+		return ec.fieldContext_SalesSummary_refunds(ctx, field)
+	case "recentRefunds":
+		return ec.fieldContext_SalesSummary_recentRefunds(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SalesSummary", field.Name)
+}
+
+func (ec *executionContext) childFields_TopItem(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "productName":
+		return ec.fieldContext_TopItem_productName(ctx, field)
+	case "quantity":
+		return ec.fieldContext_TopItem_quantity(ctx, field)
+	case "revenue":
+		return ec.fieldContext_TopItem_revenue(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type TopItem", field.Name)
 }
 
 func (ec *executionContext) childFields___Directive(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -1463,6 +1839,121 @@ func (ec *executionContext) _Category_sortOrder(ctx context.Context, field graph
 }
 func (ec *executionContext) fieldContext_Category_sortOrder(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Category", field, false, false, "Int")
+}
+
+func (ec *executionContext) _DayPoint_day(ctx context.Context, field graphql.CollectedField, obj *model.DayPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DayPoint_day(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Day, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DayPoint_day(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DayPoint", field, false, false, "String")
+}
+
+func (ec *executionContext) _DayPoint_netSales(ctx context.Context, field graphql.CollectedField, obj *model.DayPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DayPoint_netSales(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.NetSales, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DayPoint_netSales(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DayPoint", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _DayPoint_orderCount(ctx context.Context, field graphql.CollectedField, obj *model.DayPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_DayPoint_orderCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrderCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_DayPoint_orderCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("DayPoint", field, false, false, "Int")
+}
+
+func (ec *executionContext) _HourPoint_hour(ctx context.Context, field graphql.CollectedField, obj *model.HourPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HourPoint_hour(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Hour, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HourPoint_hour(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HourPoint", field, false, false, "Int")
+}
+
+func (ec *executionContext) _HourPoint_orderCount(ctx context.Context, field graphql.CollectedField, obj *model.HourPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_HourPoint_orderCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrderCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_HourPoint_orderCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("HourPoint", field, false, false, "Int")
 }
 
 func (ec *executionContext) _Modifier_id(ctx context.Context, field graphql.CollectedField, obj *model.Modifier) (ret graphql.Marshaler) {
@@ -2880,6 +3371,75 @@ func (ec *executionContext) fieldContext_Payment_settledAt(_ context.Context, fi
 	return graphql.NewScalarFieldContext("Payment", field, false, false, "Time")
 }
 
+func (ec *executionContext) _PaymentMethodPoint_method(ctx context.Context, field graphql.CollectedField, obj *model.PaymentMethodPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PaymentMethodPoint_method(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Method, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v model.PaymentMethod) graphql.Marshaler {
+			return ec.marshalNPaymentMethod2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐPaymentMethod(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PaymentMethodPoint_method(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PaymentMethodPoint", field, false, false, "PaymentMethod")
+}
+
+func (ec *executionContext) _PaymentMethodPoint_count(ctx context.Context, field graphql.CollectedField, obj *model.PaymentMethodPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PaymentMethodPoint_count(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PaymentMethodPoint_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PaymentMethodPoint", field, false, false, "Int")
+}
+
+func (ec *executionContext) _PaymentMethodPoint_amount(ctx context.Context, field graphql.CollectedField, obj *model.PaymentMethodPoint) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_PaymentMethodPoint_amount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Amount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_PaymentMethodPoint_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("PaymentMethodPoint", field, false, false, "Decimal")
+}
+
 func (ec *executionContext) _Product_id(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3202,6 +3762,38 @@ func (ec *executionContext) fieldContext_Query_preparationQueue(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_salesSummary(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_salesSummary(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SalesSummary(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SalesSummary) graphql.Marshaler {
+			return ec.marshalNSalesSummary2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐSalesSummary(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_salesSummary(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SalesSummary(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3276,6 +3868,630 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 		},
 	}
 	return fc, nil
+}
+
+func (ec *executionContext) _RefundLine_orderNumber(ctx context.Context, field graphql.CollectedField, obj *model.RefundLine) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RefundLine_orderNumber(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrderNumber, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RefundLine_orderNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RefundLine", field, false, false, "ID")
+}
+
+func (ec *executionContext) _RefundLine_amount(ctx context.Context, field graphql.CollectedField, obj *model.RefundLine) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RefundLine_amount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Amount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RefundLine_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RefundLine", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _RefundLine_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.RefundLine) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RefundLine_createdAt(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v time.Time) graphql.Marshaler {
+			return ec.marshalNTime2timeᚐTime(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RefundLine_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RefundLine", field, false, false, "Time")
+}
+
+func (ec *executionContext) _RefundSummary_count(ctx context.Context, field graphql.CollectedField, obj *model.RefundSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RefundSummary_count(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RefundSummary_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RefundSummary", field, false, false, "Int")
+}
+
+func (ec *executionContext) _RefundSummary_total(ctx context.Context, field graphql.CollectedField, obj *model.RefundSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_RefundSummary_total(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Total, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_RefundSummary_total(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("RefundSummary", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _SalesSnapshot_netSales(ctx context.Context, field graphql.CollectedField, obj *model.SalesSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSnapshot_netSales(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.NetSales, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSnapshot_netSales(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSnapshot", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _SalesSnapshot_grossSales(ctx context.Context, field graphql.CollectedField, obj *model.SalesSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSnapshot_grossSales(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.GrossSales, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSnapshot_grossSales(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSnapshot", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _SalesSnapshot_orderCount(ctx context.Context, field graphql.CollectedField, obj *model.SalesSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSnapshot_orderCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.OrderCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSnapshot_orderCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSnapshot", field, false, false, "Int")
+}
+
+func (ec *executionContext) _SalesSnapshot_averageOrderValue(ctx context.Context, field graphql.CollectedField, obj *model.SalesSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSnapshot_averageOrderValue(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.AverageOrderValue, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSnapshot_averageOrderValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSnapshot", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _SalesSnapshot_refundCount(ctx context.Context, field graphql.CollectedField, obj *model.SalesSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSnapshot_refundCount(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RefundCount, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSnapshot_refundCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSnapshot", field, false, false, "Int")
+}
+
+func (ec *executionContext) _SalesSnapshot_refundTotal(ctx context.Context, field graphql.CollectedField, obj *model.SalesSnapshot) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSnapshot_refundTotal(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RefundTotal, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSnapshot_refundTotal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSnapshot", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _SalesSummary_currency(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_currency(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Currency, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_currency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSummary", field, false, false, "String")
+}
+
+func (ec *executionContext) _SalesSummary_timezone(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_timezone(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Timezone, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_timezone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SalesSummary", field, false, false, "String")
+}
+
+func (ec *executionContext) _SalesSummary_today(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_today(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Today, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SalesSnapshot) graphql.Marshaler {
+			return ec.marshalNSalesSnapshot2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐSalesSnapshot(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_today(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SalesSnapshot(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SalesSummary_yesterday(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_yesterday(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Yesterday, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.SalesSnapshot) graphql.Marshaler {
+			return ec.marshalNSalesSnapshot2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐSalesSnapshot(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_yesterday(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SalesSnapshot(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SalesSummary_trend(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_trend(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Trend, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.DayPoint) graphql.Marshaler {
+			return ec.marshalNDayPoint2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐDayPointᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_trend(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_DayPoint(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SalesSummary_topItems(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_topItems(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.TopItems, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.TopItem) graphql.Marshaler {
+			return ec.marshalNTopItem2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐTopItemᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_topItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_TopItem(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SalesSummary_hours(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_hours(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Hours, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.HourPoint) graphql.Marshaler {
+			return ec.marshalNHourPoint2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐHourPointᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_hours(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_HourPoint(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SalesSummary_split(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_split(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Split, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.PaymentMethodPoint) graphql.Marshaler {
+			return ec.marshalNPaymentMethodPoint2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐPaymentMethodPointᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_split(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_PaymentMethodPoint(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SalesSummary_refunds(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_refunds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Refunds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.RefundSummary) graphql.Marshaler {
+			return ec.marshalNRefundSummary2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundSummary(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_refunds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RefundSummary(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SalesSummary_recentRefunds(ctx context.Context, field graphql.CollectedField, obj *model.SalesSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SalesSummary_recentRefunds(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.RecentRefunds, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []*model.RefundLine) graphql.Marshaler {
+			return ec.marshalNRefundLine2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundLineᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SalesSummary_recentRefunds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SalesSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_RefundLine(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TopItem_productName(ctx context.Context, field graphql.CollectedField, obj *model.TopItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TopItem_productName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ProductName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TopItem_productName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TopItem", field, false, false, "String")
+}
+
+func (ec *executionContext) _TopItem_quantity(ctx context.Context, field graphql.CollectedField, obj *model.TopItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TopItem_quantity(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Quantity, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v int32) graphql.Marshaler {
+			return ec.marshalNInt2int32(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TopItem_quantity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TopItem", field, false, false, "Int")
+}
+
+func (ec *executionContext) _TopItem_revenue(ctx context.Context, field graphql.CollectedField, obj *model.TopItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_TopItem_revenue(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Revenue, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
+			return ec.marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_TopItem_revenue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("TopItem", field, false, false, "Decimal")
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -4714,6 +5930,87 @@ func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var dayPointImplementors = []string{"DayPoint"}
+
+func (ec *executionContext) _DayPoint(ctx context.Context, sel ast.SelectionSet, obj *model.DayPoint) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, dayPointImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DayPoint")
+		case "day":
+			out.Values[i] = ec._DayPoint_day(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "netSales":
+			out.Values[i] = ec._DayPoint_netSales(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "orderCount":
+			out.Values[i] = ec._DayPoint_orderCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var hourPointImplementors = []string{"HourPoint"}
+
+func (ec *executionContext) _HourPoint(ctx context.Context, sel ast.SelectionSet, obj *model.HourPoint) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, hourPointImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HourPoint")
+		case "hour":
+			out.Values[i] = ec._HourPoint_hour(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "orderCount":
+			out.Values[i] = ec._HourPoint_orderCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
 var modifierImplementors = []string{"Modifier"}
 
 func (ec *executionContext) _Modifier(ctx context.Context, sel ast.SelectionSet, obj *model.Modifier) graphql.Marshaler {
@@ -5207,6 +6504,49 @@ func (ec *executionContext) _Payment(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var paymentMethodPointImplementors = []string{"PaymentMethodPoint"}
+
+func (ec *executionContext) _PaymentMethodPoint(ctx context.Context, sel ast.SelectionSet, obj *model.PaymentMethodPoint) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, paymentMethodPointImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaymentMethodPoint")
+		case "method":
+			out.Values[i] = ec._PaymentMethodPoint_method(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._PaymentMethodPoint_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._PaymentMethodPoint_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
 var productImplementors = []string{"Product"}
 
 func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, obj *model.Product) graphql.Marshaler {
@@ -5313,6 +6653,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_preparationQueue(ctx, field)
 				})
+		case "salesSummary":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, true,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_salesSummary(ctx, field)
+				})
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -5326,6 +6672,266 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			})
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var refundLineImplementors = []string{"RefundLine"}
+
+func (ec *executionContext) _RefundLine(ctx context.Context, sel ast.SelectionSet, obj *model.RefundLine) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, refundLineImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RefundLine")
+		case "orderNumber":
+			out.Values[i] = ec._RefundLine_orderNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._RefundLine_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._RefundLine_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var refundSummaryImplementors = []string{"RefundSummary"}
+
+func (ec *executionContext) _RefundSummary(ctx context.Context, sel ast.SelectionSet, obj *model.RefundSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, refundSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RefundSummary")
+		case "count":
+			out.Values[i] = ec._RefundSummary_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "total":
+			out.Values[i] = ec._RefundSummary_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var salesSnapshotImplementors = []string{"SalesSnapshot"}
+
+func (ec *executionContext) _SalesSnapshot(ctx context.Context, sel ast.SelectionSet, obj *model.SalesSnapshot) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, salesSnapshotImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SalesSnapshot")
+		case "netSales":
+			out.Values[i] = ec._SalesSnapshot_netSales(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "grossSales":
+			out.Values[i] = ec._SalesSnapshot_grossSales(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "orderCount":
+			out.Values[i] = ec._SalesSnapshot_orderCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "averageOrderValue":
+			out.Values[i] = ec._SalesSnapshot_averageOrderValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "refundCount":
+			out.Values[i] = ec._SalesSnapshot_refundCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "refundTotal":
+			out.Values[i] = ec._SalesSnapshot_refundTotal(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var salesSummaryImplementors = []string{"SalesSummary"}
+
+func (ec *executionContext) _SalesSummary(ctx context.Context, sel ast.SelectionSet, obj *model.SalesSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, salesSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SalesSummary")
+		case "currency":
+			out.Values[i] = ec._SalesSummary_currency(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timezone":
+			out.Values[i] = ec._SalesSummary_timezone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "today":
+			out.Values[i] = ec._SalesSummary_today(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "yesterday":
+			out.Values[i] = ec._SalesSummary_yesterday(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "trend":
+			out.Values[i] = ec._SalesSummary_trend(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "topItems":
+			out.Values[i] = ec._SalesSummary_topItems(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hours":
+			out.Values[i] = ec._SalesSummary_hours(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "split":
+			out.Values[i] = ec._SalesSummary_split(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "refunds":
+			out.Values[i] = ec._SalesSummary_refunds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recentRefunds":
+			out.Values[i] = ec._SalesSummary_recentRefunds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var topItemImplementors = []string{"TopItem"}
+
+func (ec *executionContext) _TopItem(ctx context.Context, sel ast.SelectionSet, obj *model.TopItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, topItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TopItem")
+		case "productName":
+			out.Values[i] = ec._TopItem_productName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "quantity":
+			out.Values[i] = ec._TopItem_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revenue":
+			out.Values[i] = ec._TopItem_revenue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -5752,6 +7358,30 @@ func (ec *executionContext) marshalNCategory2ᚖgithubᚗcomᚋjames5635ᚋcoffe
 	return ec._Category(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNDayPoint2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐDayPointᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DayPoint) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDayPoint2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐDayPoint(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNDayPoint2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐDayPoint(ctx context.Context, sel ast.SelectionSet, v *model.DayPoint) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "DayPoint!")
+		return graphql.Null
+	}
+	return ec._DayPoint(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx context.Context, v any) (scalar.Decimal, error) {
 	var res scalar.Decimal
 	err := res.UnmarshalGQL(v)
@@ -5760,6 +7390,30 @@ func (ec *executionContext) unmarshalNDecimal2githubᚗcomᚋjames5635ᚋcoffee�
 
 func (ec *executionContext) marshalNDecimal2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋscalarᚐDecimal(ctx context.Context, sel ast.SelectionSet, v scalar.Decimal) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNHourPoint2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐHourPointᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.HourPoint) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNHourPoint2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐHourPoint(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNHourPoint2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐHourPoint(ctx context.Context, sel ast.SelectionSet, v *model.HourPoint) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "HourPoint!")
+		return graphql.Null
+	}
+	return ec._HourPoint(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
@@ -5979,6 +7633,30 @@ func (ec *executionContext) marshalNPaymentMethod2githubᚗcomᚋjames5635ᚋcof
 	return v
 }
 
+func (ec *executionContext) marshalNPaymentMethodPoint2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐPaymentMethodPointᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.PaymentMethodPoint) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNPaymentMethodPoint2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐPaymentMethodPoint(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNPaymentMethodPoint2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐPaymentMethodPoint(ctx context.Context, sel ast.SelectionSet, v *model.PaymentMethodPoint) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "PaymentMethodPoint!")
+		return graphql.Null
+	}
+	return ec._PaymentMethodPoint(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNPaymentStatus2githubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐPaymentStatus(ctx context.Context, v any) (model.PaymentStatus, error) {
 	var res model.PaymentStatus
 	err := res.UnmarshalGQL(v)
@@ -6042,6 +7720,54 @@ func (ec *executionContext) unmarshalNRecordPaymentInput2githubᚗcomᚋjames563
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNRefundLine2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundLineᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RefundLine) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNRefundLine2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundLine(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRefundLine2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundLine(ctx context.Context, sel ast.SelectionSet, v *model.RefundLine) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "RefundLine!")
+		return graphql.Null
+	}
+	return ec._RefundLine(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRefundSummary2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐRefundSummary(ctx context.Context, sel ast.SelectionSet, v *model.RefundSummary) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "RefundSummary!")
+		return graphql.Null
+	}
+	return ec._RefundSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSalesSnapshot2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐSalesSnapshot(ctx context.Context, sel ast.SelectionSet, v *model.SalesSnapshot) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "SalesSnapshot!")
+		return graphql.Null
+	}
+	return ec._SalesSnapshot(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSalesSummary2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐSalesSummary(ctx context.Context, sel ast.SelectionSet, v *model.SalesSummary) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "SalesSummary!")
+		return graphql.Null
+	}
+	return ec._SalesSummary(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6068,6 +7794,30 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		graphql.AddInvalidNullFromMarshaler(ctx, "Time!")
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTopItem2ᚕᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐTopItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.TopItem) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTopItem2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐTopItem(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNTopItem2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐTopItem(ctx context.Context, sel ast.SelectionSet, v *model.TopItem) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "TopItem!")
+		return graphql.Null
+	}
+	return ec._TopItem(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

@@ -159,6 +159,63 @@ type Query {
   products(categoryId: ID): [Product!]!
   order(id: ID!): Order!
   preparationQueue: [Order!]!
+  salesSummary: SalesSummary!
+}
+
+type SalesSnapshot {
+  netSales: Decimal!
+  grossSales: Decimal!
+  orderCount: Int!
+  averageOrderValue: Decimal!
+  refundCount: Int!
+  refundTotal: Decimal!
+}
+
+type DayPoint {
+  day: String!
+  netSales: Decimal!
+  orderCount: Int!
+}
+
+type TopItem {
+  productName: String!
+  quantity: Int!
+  revenue: Decimal!
+}
+
+type HourPoint {
+  hour: Int!
+  orderCount: Int!
+}
+
+type PaymentMethodPoint {
+  method: PaymentMethod!
+  count: Int!
+  amount: Decimal!
+}
+
+type RefundLine {
+  orderNumber: ID!
+  amount: Decimal!
+  createdAt: Time!
+}
+
+type RefundSummary {
+  count: Int!
+  total: Decimal!
+}
+
+type SalesSummary {
+  currency: String!
+  timezone: String!
+  today: SalesSnapshot!
+  yesterday: SalesSnapshot!
+  trend: [DayPoint!]!
+  topItems: [TopItem!]!
+  hours: [HourPoint!]!
+  split: [PaymentMethodPoint!]!
+  refunds: RefundSummary!
+  recentRefunds: [RefundLine!]!
 }
 
 type Mutation {

@@ -120,6 +120,96 @@ func graphPayment(payment repository.Payment) *model.Payment {
 	}
 }
 
+func graphSalesSnapshot(s repository.SalesSnapshot) *model.SalesSnapshot {
+	return &model.SalesSnapshot{
+		NetSales:          scalar.Decimal(repository.FormatMoney(s.NetSales)),
+		GrossSales:        scalar.Decimal(repository.FormatMoney(s.GrossSales)),
+		OrderCount:        int32(s.OrderCount),
+		AverageOrderValue: scalar.Decimal(repository.FormatMoney(s.AverageOrderValue)),
+		RefundCount:       int32(s.RefundCount),
+		RefundTotal:       scalar.Decimal(repository.FormatMoney(s.RefundTotal)),
+	}
+}
+
+func graphDayPoint(p repository.DayPoint) *model.DayPoint {
+	return &model.DayPoint{
+		Day:        p.Day,
+		NetSales:   scalar.Decimal(repository.FormatMoney(p.NetSales)),
+		OrderCount: int32(p.OrderCount),
+	}
+}
+
+func graphTopItem(i repository.TopItem) *model.TopItem {
+	return &model.TopItem{
+		ProductName: i.ProductName,
+		Quantity:    int32(i.Quantity),
+		Revenue:     scalar.Decimal(repository.FormatMoney(i.Revenue)),
+	}
+}
+
+func graphHourPoint(h repository.HourPoint) *model.HourPoint {
+	return &model.HourPoint{
+		Hour:       int32(h.Hour),
+		OrderCount: int32(h.OrderCount),
+	}
+}
+
+func graphPaymentMethodPoint(p repository.PaymentMethodPoint) *model.PaymentMethodPoint {
+	return &model.PaymentMethodPoint{
+		Method: model.PaymentMethod(strings.ToUpper(string(p.Method))),
+		Count:  int32(p.Count),
+		Amount: scalar.Decimal(repository.FormatMoney(p.Amount)),
+	}
+}
+
+func graphRefundLine(r repository.RefundLine) *model.RefundLine {
+	return &model.RefundLine{
+		OrderNumber: graphID(r.OrderNumber),
+		Amount:      scalar.Decimal(repository.FormatMoney(r.Amount)),
+		CreatedAt:   r.CreatedAt,
+	}
+}
+
+func graphRefundSummary(r repository.RefundTotals) *model.RefundSummary {
+	return &model.RefundSummary{
+		Count: int32(r.Count),
+		Total: scalar.Decimal(repository.FormatMoney(r.Total)),
+	}
+}
+
+// graphSalesSummary maps a repository.SalesSummary to the GraphQL SalesSummary.
+func graphSalesSummary(s repository.SalesSummary) *model.SalesSummary {
+	today := graphSalesSnapshot(s.Today)
+	yesterday := graphSalesSnapshot(s.Yesterday)
+	trend := make([]*model.DayPoint, 0, len(s.Trend))
+	for _, p := range s.Trend {
+		trend = append(trend, graphDayPoint(p))
+	}
+	topItems := make([]*model.TopItem, 0, len(s.TopItems))
+	for _, i := range s.TopItems {
+		topItems = append(topItems, graphTopItem(i))
+	}
+	hours := make([]*model.HourPoint, 0, len(s.Hours))
+	for _, h := range s.Hours {
+		hours = append(hours, graphHourPoint(h))
+	}
+	split := make([]*model.PaymentMethodPoint, 0, len(s.Split))
+	for _, p := range s.Split {
+		split = append(split, graphPaymentMethodPoint(p))
+	}
+	recentRefunds := make([]*model.RefundLine, 0, len(s.RecentRefunds))
+	for _, r := range s.RecentRefunds {
+		recentRefunds = append(recentRefunds, graphRefundLine(r))
+	}
+	return &model.SalesSummary{
+		Currency: s.Currency, Timezone: s.Timezone,
+		Today: today, Yesterday: yesterday,
+		Trend: trend, TopItems: topItems, Hours: hours, Split: split,
+		Refunds:       graphRefundSummary(s.Refunds),
+		RecentRefunds: recentRefunds,
+	}
+}
+
 // authPayload maps a service TokenPair to the GraphQL AuthPayload.
 func authPayload(pair service.TokenPair) *model.AuthPayload {
 	return &model.AuthPayload{
