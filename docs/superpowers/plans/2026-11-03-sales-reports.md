@@ -172,16 +172,16 @@ WHERE created_at >= $1 AND created_at < $2 AND status <> 'cancelled';
 -- name: SalesTrend :many
 WITH days AS (
     SELECT generate_series(
-        date_trunc('day', now() AT TIME ZONE $2) - ($1 - 1) * interval '1 day',
-        date_trunc('day', now() AT TIME ZONE $2),
+        date_trunc('day', now() AT TIME ZONE $1) - ($2 - 1) * interval '1 day',
+        date_trunc('day', now() AT TIME ZONE $1),
         interval '1 day')::date AS d)
 SELECT to_char(d.d, 'YYYY-MM-DD') AS day,
        (SELECT (COALESCE(SUM(amount) FILTER (WHERE kind='payment' AND status='succeeded'),0)
               - COALESCE(SUM(amount) FILTER (WHERE kind='refund' AND status='succeeded'),0))
            ::numeric(14,2) FROM payments
-        WHERE (created_at AT TIME ZONE $2)::date = d.d)::text AS net_sales,
+        WHERE (created_at AT TIME ZONE $1)::date = d.d)::text AS net_sales,
        (SELECT COUNT(*) FROM orders
-         WHERE (created_at AT TIME ZONE $2)::date = d.d AND status <> 'cancelled')::int AS order_count
+         WHERE (created_at AT TIME ZONE $1)::date = d.d AND status <> 'cancelled')::int AS order_count
 FROM days d
 ORDER BY d.d;
 
