@@ -141,6 +141,7 @@ type Product struct {
 	Description    string           `json:"description"`
 	Price          scalar.Decimal   `json:"price"`
 	Sku            *string          `json:"sku,omitempty"`
+	ImageURL       string           `json:"imageUrl"`
 	ModifierGroups []*ModifierGroup `json:"modifierGroups"`
 }
 

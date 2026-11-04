@@ -41,6 +41,7 @@ type Product struct {
 	Description string
 	Price       Money
 	SKU         *string
+	ImageURL    string
 	IsAvailable bool
 	Groups      []ModifierGroup
 	CreatedAt   time.Time

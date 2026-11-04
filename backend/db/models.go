@@ -125,6 +125,7 @@ type Product struct {
 	IsAvailable bool
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	ImageUrl    string
 }
 
 type ProductModifierGroup struct {

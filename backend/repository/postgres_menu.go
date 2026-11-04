@@ -39,6 +39,7 @@ func (p *Postgres) ListProducts(ctx context.Context, categoryID *int64) ([]Produ
 		products = append(products, Product{
 			ID: row.ID, CategoryID: nullableInt64(row.CategoryID), Name: row.Name,
 			Description: row.Description, Price: price, SKU: nullableString(row.Sku),
+			ImageURL: row.ImageUrl,
 			IsAvailable: row.IsAvailable, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		})
 		product := &products[len(products)-1]

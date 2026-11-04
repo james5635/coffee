@@ -77,6 +77,7 @@ const products: ProductsQuery['products'] = [
     description: 'Velvety espresso with steamed milk.',
     price: '4.25',
     sku: 'FW',
+    imageUrl: '/products/test.svg',
     modifierGroups: [],
   },
 ];

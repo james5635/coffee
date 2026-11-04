@@ -51,7 +51,19 @@ type CreateProductParams struct {
 	Sku         sql.NullString
 }
 
-func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
+type CreateProductRow struct {
+	ID          int64
+	CategoryID  sql.NullInt64
+	Name        string
+	Description string
+	Price       string
+	Sku         sql.NullString
+	IsAvailable bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (CreateProductRow, error) {
 	row := q.db.QueryRowContext(ctx, createProduct,
 		arg.CategoryID,
 		arg.Name,
@@ -59,7 +71,7 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		arg.Price,
 		arg.Sku,
 	)
-	var i Product
+	var i CreateProductRow
 	err := row.Scan(
 		&i.ID,
 		&i.CategoryID,
@@ -85,9 +97,21 @@ WHERE p.id = $1
 FOR SHARE OF p
 `
 
-func (q *Queries) GetSellableProduct(ctx context.Context, id int64) (Product, error) {
+type GetSellableProductRow struct {
+	ID          int64
+	CategoryID  sql.NullInt64
+	Name        string
+	Description string
+	Price       string
+	Sku         sql.NullString
+	IsAvailable bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (q *Queries) GetSellableProduct(ctx context.Context, id int64) (GetSellableProductRow, error) {
 	row := q.db.QueryRowContext(ctx, getSellableProduct, id)
-	var i Product
+	var i GetSellableProductRow
 	err := row.Scan(
 		&i.ID,
 		&i.CategoryID,
@@ -199,7 +223,7 @@ func (q *Queries) ListActiveModifiersInGroup(ctx context.Context, groupID int64)
 
 const listAvailableProducts = `-- name: ListAvailableProducts :many
 SELECT p.id, p.category_id, c.name AS category_name, p.name, p.description,
-       p.price, p.sku, p.is_available, p.created_at, p.updated_at
+       p.price, p.sku, p.image_url, p.is_available, p.created_at, p.updated_at
 FROM products p
 LEFT JOIN categories c ON c.id = p.category_id
 WHERE p.is_available AND (p.category_id IS NULL OR c.is_active)
@@ -214,6 +238,7 @@ type ListAvailableProductsRow struct {
 	Description  string
 	Price        string
 	Sku          sql.NullString
+	ImageUrl     string
 	IsAvailable  bool
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
@@ -236,6 +261,7 @@ func (q *Queries) ListAvailableProducts(ctx context.Context) ([]ListAvailablePro
 			&i.Description,
 			&i.Price,
 			&i.Sku,
+			&i.ImageUrl,
 			&i.IsAvailable,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -321,15 +347,27 @@ WHERE category_id = $1
 ORDER BY name
 `
 
-func (q *Queries) ListProductsByCategory(ctx context.Context, categoryID sql.NullInt64) ([]Product, error) {
+type ListProductsByCategoryRow struct {
+	ID          int64
+	CategoryID  sql.NullInt64
+	Name        string
+	Description string
+	Price       string
+	Sku         sql.NullString
+	IsAvailable bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (q *Queries) ListProductsByCategory(ctx context.Context, categoryID sql.NullInt64) ([]ListProductsByCategoryRow, error) {
 	rows, err := q.db.QueryContext(ctx, listProductsByCategory, categoryID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Product
+	var items []ListProductsByCategoryRow
 	for rows.Next() {
-		var i Product
+		var i ListProductsByCategoryRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CategoryID,
@@ -426,7 +464,19 @@ type UpdateProductParams struct {
 	IsAvailable bool
 }
 
-func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error) {
+type UpdateProductRow struct {
+	ID          int64
+	CategoryID  sql.NullInt64
+	Name        string
+	Description string
+	Price       string
+	Sku         sql.NullString
+	IsAvailable bool
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (UpdateProductRow, error) {
 	row := q.db.QueryRowContext(ctx, updateProduct,
 		arg.ID,
 		arg.CategoryID,
@@ -436,7 +486,7 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		arg.Sku,
 		arg.IsAvailable,
 	)
-	var i Product
+	var i UpdateProductRow
 	err := row.Scan(
 		&i.ID,
 		&i.CategoryID,

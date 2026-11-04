@@ -49,6 +49,7 @@ type Product {
   description: String!
   price: Decimal!
   sku: String
+  imageUrl: String!
   modifierGroups: [ModifierGroup!]!
 }
 

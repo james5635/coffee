@@ -33,6 +33,7 @@ interface MenuProductView {
   name: string;
   description: string;
   priceLabel: string;
+  imageUrl: string;
   modifierGroups: MenuModifierGroupView[];
 }
 
@@ -103,6 +104,7 @@ function toProductView(product: ProductsQuery['products'][number]): MenuProductV
     name: product.name,
     description: product.description,
     priceLabel: formatMoney(product.price),
+    imageUrl: product.imageUrl,
     modifierGroups: [...product.modifierGroups].sort(compareBySortOrder).map((group) => ({
       id: group.id,
       name: group.name,

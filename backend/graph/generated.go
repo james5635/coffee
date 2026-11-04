@@ -149,6 +149,7 @@ type ComplexityRoot struct {
 		CategoryID     func(childComplexity int) int
 		Description    func(childComplexity int) int
 		ID             func(childComplexity int) int
+		ImageURL       func(childComplexity int) int
 		ModifierGroups func(childComplexity int) int
 		Name           func(childComplexity int) int
 		Price          func(childComplexity int) int
@@ -723,6 +724,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Product.ID(childComplexity), true
+	case "Product.imageUrl":
+		if e.ComplexityRoot.Product.ImageURL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Product.ImageURL(childComplexity), true
 	case "Product.modifierGroups":
 		if e.ComplexityRoot.Product.ModifierGroups == nil {
 			break
@@ -1255,6 +1262,8 @@ func (ec *executionContext) childFields_Product(ctx context.Context, field graph
 		return ec.fieldContext_Product_price(ctx, field)
 	case "sku":
 		return ec.fieldContext_Product_sku(ctx, field)
+	case "imageUrl":
+		return ec.fieldContext_Product_imageUrl(ctx, field)
 	case "modifierGroups":
 		return ec.fieldContext_Product_modifierGroups(ctx, field)
 	}
@@ -3575,6 +3584,29 @@ func (ec *executionContext) _Product_sku(ctx context.Context, field graphql.Coll
 	)
 }
 func (ec *executionContext) fieldContext_Product_sku(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Product", field, false, false, "String")
+}
+
+func (ec *executionContext) _Product_imageUrl(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Product_imageUrl(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ImageURL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Product_imageUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("Product", field, false, false, "String")
 }
 
@@ -6586,6 +6618,11 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 		case "sku":
 			out.Values[i] = ec._Product_sku(ctx, field, obj)
 			if out.Values[i] == graphql.RequiredNull {
+				out.Invalids++
+			}
+		case "imageUrl":
+			out.Values[i] = ec._Product_imageUrl(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "modifierGroups":

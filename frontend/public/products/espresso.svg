@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Espresso">
+  <rect width="400" height="400" rx="36" fill="#f8efe3"/>
+  <circle cx="200" cy="210" r="132" fill="#f0e0cd"/>
+  <circle cx="200" cy="218" r="104" fill="#ffffff"/>
+  <circle cx="200" cy="218" r="94" fill="#f4ede1"/>
+  <circle cx="200" cy="218" r="74" fill="#ffffff"/>
+  <circle cx="200" cy="218" r="58" fill="#33221a"/>
+  <circle cx="200" cy="218" r="46" fill="#b45309"/>
+  <circle cx="200" cy="218" r="36" fill="#3a271c"/>
+  <circle cx="200" cy="218" r="18" fill="#2a1d14"/>
+  <path d="M176 198 a30 30 0 0 1 24 -12" stroke="#7a4a22" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <path d="M212 218 m-14 -8 a16 16 0 0 0 30 10" stroke="#c97b2f" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.75"/>
+</svg>

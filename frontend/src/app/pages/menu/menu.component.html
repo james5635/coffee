@@ -107,16 +107,37 @@
         <ul class="mt-6 space-y-4">
           @for (product of visibleProducts(); track product.id) {
             <li>
-              <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200">
-                <div class="flex items-start justify-between gap-4">
-                  <div class="min-w-0">
-                    <h2 class="text-lg font-semibold text-stone-900">{{ product.name }}</h2>
-                    <p class="mt-1 text-sm text-stone-500">{{ product.description }}</p>
+              <article class="flex gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200 sm:gap-5 sm:p-5">
+                @if (product.imageUrl) {
+                  <img
+                    [src]="product.imageUrl"
+                    [alt]="product.name"
+                    width="96"
+                    height="96"
+                    loading="lazy"
+                    class="h-20 w-20 shrink-0 rounded-xl object-cover ring-1 ring-stone-200 sm:h-24 sm:w-24"
+                  />
+                } @else {
+                  <div
+                    class="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800 sm:h-24 sm:w-24"
+                    aria-hidden="true"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-7 w-7">
+                      <path d="M5 10h11v4.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5V10Z" />
+                      <path d="M16 11.25h1.9a2.35 2.35 0 0 1 0 4.7H16" />
+                    </svg>
                   </div>
-                  <p class="shrink-0 text-lg font-semibold text-stone-900">
-                    {{ product.priceLabel }}
-                  </p>
-                </div>
+                }
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0">
+                      <h2 class="text-lg font-semibold text-stone-900">{{ product.name }}</h2>
+                      <p class="mt-1 text-sm text-stone-500">{{ product.description }}</p>
+                    </div>
+                    <p class="shrink-0 text-lg font-semibold text-stone-900">
+                      {{ product.priceLabel }}
+                    </p>
+                  </div>
 
                 @for (group of product.modifierGroups; track group.id) {
                   <section class="mt-4 border-t border-stone-100 pt-3">
@@ -136,6 +157,7 @@
                     </ul>
                   </section>
                 }
+                </div>
               </article>
             </li>
           }

@@ -23,6 +23,7 @@ const products: ProductsQuery['products'] = [
     description: 'Velvety espresso with steamed milk.',
     price: '4.25',
     sku: 'FW',
+    imageUrl: '/products/test.svg',
     modifierGroups: [
       {
         id: 'group-milk',
@@ -45,6 +46,7 @@ const products: ProductsQuery['products'] = [
     description: 'Sencha, brewed to order.',
     price: '3.50',
     sku: null,
+    imageUrl: '/products/test.svg',
     modifierGroups: [],
   },
 ];

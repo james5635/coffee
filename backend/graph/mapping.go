@@ -40,6 +40,7 @@ func graphProduct(product repository.Product) *model.Product {
 	result := &model.Product{
 		ID: graphID(product.ID), Name: product.Name, Description: product.Description,
 		Price: scalar.Decimal(repository.FormatMoney(product.Price)), Sku: product.SKU,
+		ImageURL: product.ImageURL,
 		ModifierGroups: make([]*model.ModifierGroup, 0, len(product.Groups)),
 	}
 	if product.CategoryID != nil {

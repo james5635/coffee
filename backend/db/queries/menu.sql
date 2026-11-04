@@ -17,7 +17,7 @@ RETURNING id, name, description, sort_order, is_active, created_at;
 
 -- name: ListAvailableProducts :many
 SELECT p.id, p.category_id, c.name AS category_name, p.name, p.description,
-       p.price, p.sku, p.is_available, p.created_at, p.updated_at
+       p.price, p.sku, p.image_url, p.is_available, p.created_at, p.updated_at
 FROM products p
 LEFT JOIN categories c ON c.id = p.category_id
 WHERE p.is_available AND (p.category_id IS NULL OR c.is_active)

@@ -218,6 +218,7 @@ export type Product = {
   categoryId?: Maybe<Scalars['ID']['output']>;
   description: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  imageUrl: Scalars['String']['output'];
   modifierGroups: Array<ModifierGroup>;
   name: Scalars['String']['output'];
   price: Scalars['Decimal']['output'];
