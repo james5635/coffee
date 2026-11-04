@@ -46,6 +46,16 @@
             Payments
           </a>
         }
+        @if (canViewReports()) {
+          <a
+            routerLink="/reports"
+            data-nav="reports"
+            routerLinkActive="bg-stone-100"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          >
+            Sales reports
+          </a>
+        }
         <button
           type="button"
           data-logout
@@ -109,6 +119,19 @@
           <h2 class="text-lg font-semibold text-stone-900">Payments &amp; refunds</h2>
           <p class="mt-1 text-sm text-stone-500">
             Look up an order, record counter payments, and issue authorized refunds.
+          </p>
+        </a>
+      }
+
+      @if (canViewReports()) {
+        <a
+          routerLink="/reports"
+          data-card="reports"
+          class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        >
+          <h2 class="text-lg font-semibold text-stone-900">Sales reports</h2>
+          <p class="mt-1 text-sm text-stone-500">
+            Daily totals, sales trends, top items, hourly orders, and payment split.
           </p>
         </a>
       }

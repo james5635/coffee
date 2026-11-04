@@ -29,6 +29,12 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client,
   },
   {
+    // Staff screen: depends on the in-memory-token auth guard and permission
+    // claims, so it must render in the browser where that state exists.
+    path: 'reports',
+    renderMode: RenderMode.Client,
+  },
+  {
     // The protected shell and unknown URLs fall back to client rendering.
     path: '**',
     renderMode: RenderMode.Client,

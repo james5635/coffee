@@ -1,0 +1,211 @@
+<div class="flex min-h-dvh flex-col bg-stone-100">
+  <header class="bg-white shadow-sm ring-1 ring-stone-200">
+    <div class="mx-auto w-full max-w-5xl flex items-center justify-between gap-3 px-4 py-3">
+      <div>
+        <h1 class="text-lg font-semibold tracking-tight text-stone-900">Sales reports</h1>
+        @if (timezone()) {
+          <p class="text-xs text-stone-500">{{ timezone() }}</p>
+        }
+      </div>
+      <button
+        type="button"
+        data-refresh
+        (click)="load()"
+        class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+      >
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+    @if (!canViewReports()) {
+      <div data-no-reports-permission class="rounded-lg bg-amber-50 p-4 ring-1 ring-amber-200 text-stone-800">
+        You do not have permission to view sales reports.
+      </div>
+    } @else {
+      @if (loading()) {
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+          <div data-skeleton class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200 animate-pulse"></div>
+        }
+      </div>
+      <div class="mt-6 h-48 bg-white shadow-sm ring-1 ring-stone-200 rounded-2xl animate-pulse" data-skeleton></div>
+    }
+
+    @if (!loading() && error()) {
+      <div data-error-banner class="rounded-lg bg-amber-50 p-4 ring-1 ring-amber-200 text-stone-800">
+        {{ error() }}
+        @if (isOfflineError()) {
+          <button
+            type="button"
+            data-try-again
+            (click)="load()"
+            class="mt-2 underline underline-offset-4 hover:text-amber-800"
+          >
+            Try again
+          </button>
+        }
+      </div>
+    }
+
+    @if (!loading() && !error() && summary()) {
+      <section data-section="today" class="mb-10">
+        <h2 class="text-lg font-semibold text-stone-900">Today</h2>
+        @if (today().empty) {
+          <p data-empty-today class="text-stone-500">No sales recorded today yet.</p>
+        } @else {
+          <div class="mt-4 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Net sales</p>
+              <p class="mt-1 text-base font-semibold text-stone-900" data-stat="net-sales">{{ today().netSales }}</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Gross sales</p>
+              <p class="mt-1 text-base font-semibold text-stone-900" data-stat="gross-sales">{{ today().grossSales }}</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Orders</p>
+              <p class="mt-1 text-base font-semibold text-stone-900" data-stat="orders">{{ today().orderCount }}</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Avg. order value</p>
+              <p class="mt-1 text-base font-semibold text-stone-900" data-stat="average-order-value">{{ today().averageOrderValue }}</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Refunds</p>
+              <p class="mt-1 text-base font-semibold text-stone-900" data-stat="refund-count">{{ today().refundCount }}</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Refund total</p>
+              <p class="mt-1 text-base font-semibold text-stone-900" data-stat="refund-total">{{ today().refundTotal }}</p>
+            </div>
+          </div>
+        }
+      </section>
+
+      <section data-section="yesterday" class="mb-10">
+        <h2 class="text-lg font-semibold text-stone-900">Yesterday</h2>
+        @if (yesterday().empty) {
+          <p data-empty-yesterday class="text-stone-500">No sales recorded yesterday yet.</p>
+        } @else {
+          <div class="mt-4 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Net sales</p>
+              <p class="mt-1 text-base font-semibold text-stone-900">{{ yesterday().netSales }}</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Orders</p>
+              <p class="mt-1 text-base font-semibold text-stone-900">{{ yesterday().orderCount }}</p>
+            </div>
+            <div class="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-200">
+              <p class="text-xs uppercase tracking-wider text-stone-500">Refund total</p>
+              <p class="mt-1 text-base font-semibold text-stone-900">{{ yesterday().refundTotal }}</p>
+            </div>
+          </div>
+        }
+      </section>
+
+      <section data-section="trend" class="mb-10">
+        <h2 class="text-lg font-semibold text-stone-900">Sales trend</h2>
+        @if (trendPoints().length === 0) {
+          <p data-empty-trend class="mt-4 text-stone-500">No trend data yet.</p>
+        } @else {
+          <div class="mt-4 h-64">
+            <canvas
+              data-chart="trend"
+              baseChart
+              type="bar"
+              [data]="trendChart()"
+              [options]="{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, title: { display: true, text: 'Net sales per day' } },
+                scales: { y: { beginAtZero: true } }
+              }"
+            ></canvas>
+          </div>
+        }
+      </section>
+
+      <section data-section="top-items" class="mb-10">
+        <h2 class="text-lg font-semibold text-stone-900">Top items</h2>
+        @if (topItems().length === 0) {
+          <p data-empty-top-items class="text-stone-500">No best-sellers yet.</p>
+        } @else {
+          <ul class="mt-4 divide-y divide-stone-200">
+            @for (item of topItems(); track item.productName) {
+              <li class="flex justify-between py-3 text-stone-900">
+                <span>{{ item.productName }}</span>
+                <span>{{ item.quantity }} × {{ amountLabel(item.revenue, currency()) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section data-section="hours" class="mb-10">
+        <h2 class="text-lg font-semibold text-stone-900">Orders by hour</h2>
+        @if (hourPoints().length === 0) {
+          <p data-empty-hours class="mt-4 text-stone-500">No hourly data yet.</p>
+        } @else {
+          <div class="mt-4 h-64">
+            <canvas
+              data-chart="hours"
+              baseChart
+              type="bar"
+              [data]="hoursChart()"
+              [options]="{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, title: { display: true, text: 'Orders per hour' } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+              }"
+            ></canvas>
+          </div>
+        }
+      </section>
+
+      <section data-section="split" class="mb-10 grid gap-6 sm:grid-cols-2">
+        <div>
+          <h2 class="text-lg font-semibold text-stone-900">Payment split</h2>
+          @if (splitPoints().length === 0) {
+            <p data-empty-split class="mt-4 text-stone-500">No payment data yet.</p>
+          } @else {
+            <div class="mt-4 h-64">
+              <canvas
+                data-chart="split"
+                baseChart
+                type="doughnut"
+                [data]="splitChart()"
+                [options]="{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { position: 'bottom' }, title: { display: true, text: 'Amount by payment method' } }
+                }"
+              ></canvas>
+            </div>
+          }
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-stone-900">Refunds</h2>
+          @if (refundSummary().count === 0) {
+            <p data-empty-refunds class="mt-4 text-stone-500">No refunds yet.</p>
+          } @else {
+            <p class="mt-1 text-base font-semibold text-stone-900" data-stat="refunds-count">{{ refundSummary().count }}</p>
+            <p class="text-base font-semibold text-stone-900" data-stat="refunds-total">{{ amountLabel(refundSummary().total, currency()) }}</p>
+            <ul class="mt-4 divide-y divide-stone-200 text-sm">
+              @for (refund of recentRefunds(); track refund.orderNumber) {
+                <li class="py-2 flex justify-between text-stone-900">
+                  <span>Order #{{ refund.orderNumber }}</span>
+                  <span>{{ amountLabel(refund.amount, currency()) }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </section>
+    }
+  }
+  </main>
+</div>

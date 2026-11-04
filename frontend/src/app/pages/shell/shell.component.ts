@@ -35,6 +35,11 @@ export class ShellComponent {
       this.authState.hasPermission('payment.refund'),
   );
 
+  /** Staff with the sales-report permission (or the auth-only fallback). */
+  protected readonly canViewReports = computed(() =>
+    this.authState.hasPermission('report.sales.read'),
+  );
+
   protected async logout(): Promise<void> {
     await this.auth.logout();
     await this.router.navigate(['/login']);

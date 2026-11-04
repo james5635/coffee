@@ -39,6 +39,13 @@ export const routes: Routes = [
       import('./pages/payments/payments.component').then((m) => m.PaymentsComponent),
     canActivate: [authGuard],
   },
+  {
+    path: 'reports',
+    title: 'Coffee Shop — Sales reports',
+    loadComponent: () =>
+      import('./pages/reports/reports.component').then((m) => m.ReportsComponent),
+    canActivate: [authGuard],
+  },
   // Signed-in landing page with the workspace navigation.
   { path: '', pathMatch: 'full', component: ShellComponent, canActivate: [authGuard] },
   // Unknown public URLs land on the menu rather than the protected shell.

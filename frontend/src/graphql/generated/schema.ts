@@ -27,6 +27,19 @@ export type Category = {
   sortOrder: Scalars['Int']['output'];
 };
 
+export type DayPoint = {
+  __typename?: 'DayPoint';
+  day: Scalars['String']['output'];
+  netSales: Scalars['Decimal']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
+export type HourPoint = {
+  __typename?: 'HourPoint';
+  hour: Scalars['Int']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
 export type IssueRefundInput = {
   amount: Scalars['Decimal']['input'];
   externalReference?: InputMaybe<Scalars['String']['input']>;
@@ -171,6 +184,13 @@ export enum PaymentMethod {
   Other = 'OTHER'
 }
 
+export type PaymentMethodPoint = {
+  __typename?: 'PaymentMethodPoint';
+  amount: Scalars['Decimal']['output'];
+  count: Scalars['Int']['output'];
+  method: PaymentMethod;
+};
+
 export enum PaymentStatus {
   Cancelled = 'CANCELLED',
   Failed = 'FAILED',
@@ -210,6 +230,7 @@ export type Query = {
   order: Order;
   preparationQueue: Array<Order>;
   products: Array<Product>;
+  salesSummary: SalesSummary;
 };
 
 
@@ -227,4 +248,48 @@ export type RecordPaymentInput = {
   externalReference?: InputMaybe<Scalars['String']['input']>;
   method: PaymentMethod;
   orderId: Scalars['ID']['input'];
+};
+
+export type RefundLine = {
+  __typename?: 'RefundLine';
+  amount: Scalars['Decimal']['output'];
+  createdAt: Scalars['Time']['output'];
+  orderNumber: Scalars['ID']['output'];
+};
+
+export type RefundSummary = {
+  __typename?: 'RefundSummary';
+  count: Scalars['Int']['output'];
+  total: Scalars['Decimal']['output'];
+};
+
+export type SalesSnapshot = {
+  __typename?: 'SalesSnapshot';
+  averageOrderValue: Scalars['Decimal']['output'];
+  grossSales: Scalars['Decimal']['output'];
+  netSales: Scalars['Decimal']['output'];
+  orderCount: Scalars['Int']['output'];
+  refundCount: Scalars['Int']['output'];
+  refundTotal: Scalars['Decimal']['output'];
+};
+
+export type SalesSummary = {
+  __typename?: 'SalesSummary';
+  currency: Scalars['String']['output'];
+  hours: Array<HourPoint>;
+  recentRefunds: Array<RefundLine>;
+  refunds: RefundSummary;
+  split: Array<PaymentMethodPoint>;
+  timezone: Scalars['String']['output'];
+  today: SalesSnapshot;
+  topItems: Array<TopItem>;
+  trend: Array<DayPoint>;
+  yesterday: SalesSnapshot;
+};
+
+export type TopItem = {
+  __typename?: 'TopItem';
+  productName: Scalars['String']['output'];
+  quantity: Scalars['Int']['output'];
+  revenue: Scalars['Decimal']['output'];
 };

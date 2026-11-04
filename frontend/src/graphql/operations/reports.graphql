@@ -1,0 +1,50 @@
+query SalesSummary {
+  salesSummary {
+    currency
+    timezone
+    today {
+      netSales
+      grossSales
+      orderCount
+      averageOrderValue
+      refundCount
+      refundTotal
+    }
+    yesterday {
+      netSales
+      grossSales
+      orderCount
+      averageOrderValue
+      refundCount
+      refundTotal
+    }
+    trend {
+      day
+      netSales
+      orderCount
+    }
+    topItems {
+      productName
+      quantity
+      revenue
+    }
+    hours {
+      hour
+      orderCount
+    }
+    split {
+      method
+      count
+      amount
+    }
+    refunds {
+      count
+      total
+    }
+    recentRefunds {
+      orderNumber
+      amount
+      createdAt
+    }
+  }
+}
