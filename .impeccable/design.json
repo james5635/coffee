@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-04T21:00:00.000Z",
+  "title": "Design System: Coffee Shop",
+  "extensions": {
+    "colorMeta": {
+      "honey-50": { "role": "primary", "displayName": "First Light", "tonalRamp": ["#fffbeb", "#fef3c7", "#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309", "#92400e", "#78350f"] },
+      "honey-100": { "role": "primary", "displayName": "Crema", "tonalRamp": ["#fffbeb", "#fef3c7", "#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309", "#92400e"] },
+      "honey-200": { "role": "primary", "displayName": "Golden Crème", "tonalRamp": ["#fef3c7", "#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309"] },
+      "honey-300": { "role": "primary", "displayName": "Morning Glow", "tonalRamp": ["#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309"] },
+      "honey-400": { "role": "primary", "displayName": "Brewed Honey", "tonalRamp": ["#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309", "#92400e"] },
+      "honey-600": { "role": "primary", "displayName": "Pressed Honey", "tonalRamp": ["#fbbf24", "#f59e0b", "#d97706", "#b45309", "#92400e", "#78350f"] },
+      "honey-700": { "role": "primary", "displayName": "Caramelized Honey", "tonalRamp": ["#f59e0b", "#d97706", "#b45309", "#92400e", "#78350f"] },
+      "honey-800": { "role": "primary", "displayName": "Honey Bark", "tonalRamp": ["#d97706", "#b45309", "#92400e", "#78350f"] },
+      "honey-900": { "role": "primary", "displayName": "Dark Blossom", "tonalRamp": ["#b45309", "#92400e", "#78350f"] },
+      "roast-50": { "role": "neutral", "displayName": "Paper", "tonalRamp": ["#fafaf9", "#f5f5f4", "#e7e5e4", "#d6d3d1", "#a8a29e", "#78716c", "#57534e", "#44403c", "#292524", "#1c1917", "#0c0a09"] },
+      "roast-100": { "role": "neutral", "displayName": "Crema Paper", "tonalRamp": ["#f5f5f4", "#e7e5e4", "#d6d3d1", "#a8a29e", "#78716c", "#57534e", "#44403c", "#292524", "#1c1917"] },
+      "roast-200": { "role": "neutral", "displayName": "Roast Ring", "tonalRamp": ["#e7e5e4", "#d6d3d1", "#a8a29e", "#78716c", "#57534e", "#44403c", "#292524"] },
+      "roast-300": { "role": "neutral", "displayName": "Roast Edge", "tonalRamp": ["#e7e5e4", "#d6d3d1", "#a8a29e", "#78716c", "#57534e", "#44403c"] },
+      "roast-400": { "role": "neutral", "displayName": "Roast Ash", "tonalRamp": ["#d6d3d1", "#a8a29e", "#78716c", "#57534e", "#44403c"] },
+      "roast-500": { "role": "neutral", "displayName": "Roast Stone", "tonalRamp": ["#a8a29e", "#78716c", "#57534e", "#44403c", "#292524"] },
+      "roast-600": { "role": "neutral", "displayName": "Roast Earth", "tonalRamp": ["#78716c", "#57534e", "#44403c", "#292524"] },
+      "roast-700": { "role": "neutral", "displayName": "Roast Bark", "tonalRamp": ["#57534e", "#44403c", "#292524", "#1c1917"] },
+      "roast-800": { "role": "neutral", "displayName": "Roast Bean", "tonalRamp": ["#44403c", "#292524", "#1c1917", "#0c0a09"] },
+      "roast-900": { "role": "neutral", "displayName": "Roast Dark", "tonalRamp": ["#292524", "#1c1917", "#0c0a09"] },
+      "roast-950": { "role": "neutral", "displayName": "Espresso Depth", "tonalRamp": ["#1c1917", "#0c0a09"] },
+      "signal-50": { "role": "semantic", "displayName": "Signal Wash" },
+      "signal-200": { "role": "semantic", "displayName": "Signal Ring" },
+      "signal-600": { "role": "semantic", "displayName": "Signal" },
+      "signal-700": { "role": "semantic", "displayName": "Signal Deep" },
+      "sage-50": { "role": "semantic", "displayName": "Sage Wash" },
+      "sage-200": { "role": "semantic", "displayName": "Sage Ring" },
+      "sage-800": { "role": "semantic", "displayName": "Sage Deep" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page-level headings only; never inside dense staff screens." },
+      "headline": { "displayName": "Headline", "purpose": "Card and section titles on light surfaces." },
+      "title": { "displayName": "Title", "purpose": "Payment panels, table headers, form group titles." },
+      "body": { "displayName": "Body", "purpose": "All reading text; 500 for UI emphasis, 400 for prose." },
+      "label": { "displayName": "Label", "purpose": "Rare tiny uppercase labels (sidebar 'Workspace' tag, field group labels)." }
+    },
+    "shadows": [
+      { "name": "card-resting", "value": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", "purpose": "Default card depth, always paired with a 1px Roast 200 ring." },
+      { "name": "card-hover", "value": "0 4px 12px 0 rgba(0, 0, 0, 0.10)", "purpose": "Hover lift on interactive cards; appears only in response to state." },
+      { "name": "backdrop", "value": "none — bg-stone-950/60 at 60% opacity", "purpose": "Full-screen scrim behind the mobile drawer; never a blur." }
+    ],
+    "motion": [
+      { "name": "ease-emphasized", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Sidebar drawer slide-in; decisive exponential ease-out." },
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Color/background state transitions on links and controls." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Color transitions." },
+      { "name": "duration-base", "value": "200ms", "purpose": "Card hover lift, arrow nudge." },
+      { "name": "duration-slow", "value": "300ms", "purpose": "Drawer open/close." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one action on a screen — sign in, save, confirm. Honey 700 on white, 8px corners.",
+      "html": "<button class=\"ds-btn-primary\">Sign in</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; gap:0.5rem; background:#b45309; color:#ffffff; font:600 0.875rem/1.4 ui-sans-serif,system-ui,sans-serif; padding:0.5rem 0.75rem; border:none; border-radius:0.5rem; box-shadow:0 1px 2px rgba(0,0,0,0.05); cursor:pointer; transition:background 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background:#d97706; } .ds-btn-primary:focus-visible { outline:2px solid #b45309; outline-offset:2px; } .ds-btn-primary:disabled { opacity:0.6; cursor:not-allowed; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Tertiary or dismissive action (Log out). Transparent ground, 1px roast ring.",
+      "html": "<button class=\"ds-btn-ghost\">Log out</button>",
+      "css": ".ds-btn-ghost { display:inline-flex; align-items:center; gap:0.5rem; background:transparent; color:#44403c; font:600 0.875rem/1.4 ui-sans-serif,system-ui,sans-serif; padding:0.375rem 0.75rem; border:1px solid #d6d3d1; border-radius:0.5rem; cursor:pointer; transition:background 150ms cubic-bezier(0.4,0,0.2,1),color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-ghost:hover { background:#fafaf9; color:#1c1917; } .ds-btn-ghost:focus-visible { outline:2px solid #b45309; outline-offset:2px; }"
+    },
+    {
+      "name": "Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text field with label. White ground, 8px corners, Honey 700 focus ring.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Email</span><input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\"></label>",
+      "css": ".ds-field { display:block; font:500 0.875rem/1.4 ui-sans-serif,system-ui,sans-serif; } .ds-field-label { display:block; margin-bottom:0.375rem; font-size:0.75rem; font-weight:600; color:#57534e; } .ds-input { display:block; width:100%; background:#ffffff; color:#1c1917; font:400 0.875rem/1.4 ui-sans-serif,system-ui,sans-serif; padding:0.5rem 0.75rem; border:1px solid #e7e5e4; border-radius:0.5rem; } .ds-input::placeholder { color:#a8a29e; } .ds-input:focus-visible { outline:2px solid #b45309; outline-offset:2px; border-color:#d6d3d1; } .ds-input[aria-invalid=\"true\"] { outline:2px solid #b91c1c; outline-offset:2px; }"
+    },
+    {
+      "name": "Workspace Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Launcher tile to a staff screen. White ground, 16px corners, honey icon chip, quiet lift on hover.",
+      "html": "<a class=\"ds-card\" href=\"/prep\"><span class=\"ds-card-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M12 7.5V12l3 2\"/></svg></span><span class=\"ds-card-title\">Prep queue</span><span class=\"ds-card-body\">Move accepted orders into preparation and mark them ready for pickup.</span></a>",
+      "css": ".ds-card { display:flex; flex-direction:column; gap:0.25rem; background:#ffffff; border:1px solid #e7e5e4; border-radius:1rem; padding:1.25rem; text-decoration:none; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:transform 200ms cubic-bezier(0.4,0,0.2,1),box-shadow 200ms cubic-bezier(0.4,0,0.2,1),border-color 200ms cubic-bezier(0.4,0,0.2,1); } .ds-card:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.10); border-color:#fcd34d; } .ds-card:focus-visible { outline:2px solid #b45309; outline-offset:2px; } .ds-card-icon { display:flex; align-items:center; justify-content:center; width:2.5rem; height:2.5rem; border-radius:0.75rem; background:#fef3c7; color:#92400e; } .ds-card-icon svg { width:1.25rem; height:1.25rem; } .ds-card-title { margin-top:0.5rem; font:600 1rem/1.4 ui-sans-serif,system-ui,sans-serif; color:#1c1917; } .ds-card-body { font:400 0.875rem/1.5 ui-sans-serif,system-ui,sans-serif; color:#78716c; }"
+    },
+    {
+      "name": "Error Alert",
+      "kind": "custom",
+      "refersTo": "alert-error",
+      "description": "Permission, validation, and transport failures. Signal Red tint; names the problem and the recovery.",
+      "html": "<div class=\"ds-alert-error\" role=\"alert\"><p class=\"ds-alert-title\">Payment could not be recorded</p><p class=\"ds-alert-body\">This order was already paid in full. Refresh and check the outstanding balance.</p></div>",
+      "css": ".ds-alert-error { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:0.75rem; padding:1rem; } .ds-alert-title { margin:0 0 0.25rem; font:600 0.875rem/1.4 ui-sans-serif,system-ui,sans-serif; } .ds-alert-body { margin:0; font:400 0.875rem/1.5 ui-sans-serif,system-ui,sans-serif; color:#b91c1c; }"
+    },
+    {
+      "name": "Sidebar Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Workspace sidebar link; default charcoal, hover raised, active honey tint.",
+      "html": "<a class=\"ds-nav-link\" href=\"/prep\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\"><circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M12 7.5V12l3 2\"/></svg><span>Prep queue</span></a>",
+      "css": ".ds-nav-link { display:flex; align-items:center; gap:0.75rem; padding:0.625rem 0.75rem; border-radius:0.75rem; color:#d6d3d1; font:500 0.875rem/1.4 ui-sans-serif,system-ui,sans-serif; text-decoration:none; transition:background 150ms cubic-bezier(0.4,0,0.2,1),color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-link svg { width:1.25rem; height:1.25rem; color:#78716c; flex-shrink:0; } .ds-nav-link:hover { background:rgba(255,255,255,0.05); color:#fafaf9; } .ds-nav-link:focus-visible { outline:2px solid #fbbf24; outline-offset:2px; } .ds-nav-link[aria-current=\"page\"] { background:rgba(251,191,36,0.1); color:#fcd34d; } .ds-nav-link[aria-current=\"page\"] svg { color:#fbbf24; }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Order status pill-replacement: rounded 6px, tinted Honey (attention) or Sage (done).",
+      "html": "<span class=\"ds-chip ds-chip-sage\">Ready</span>",
+      "css": ".ds-chip { display:inline-flex; align-items:center; gap:0.25rem; padding:0.125rem 0.5rem; border-radius:0.375rem; font:600 0.75rem/1.5 ui-sans-serif,system-ui,sans-serif; } .ds-chip-sage { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; } .ds-chip-honey { background:#fffbeb; color:#92400e; border:1px solid #fde68a; } .ds-chip-roast { background:#f5f5f4; color:#44403c; border:1px solid #e7e5e4; }"
+    },
+    {
+      "name": "Brand Mark",
+      "kind": "custom",
+      "refersTo": "brand-mark",
+      "description": "Amber cup glyph on Honey 400 chip with espresso cup-wordmark lockup.",
+      "html": "<div class=\"ds-brand\"><span class=\"ds-brand-icon\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M5 10h11v4.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5V10Z\"/><path d=\"M16 11.25h1.9a2.35 2.35 0 0 1 0 4.7H16\"/><path d=\"M8 7.2c0-.9.8-.9.8-1.8M11.5 7.2c0-.9.8-.9.8-1.8M15 7.2c0-.9.8-.9.8-1.8\"/></svg></span><span class=\"ds-brand-text\"><span class=\"ds-brand-name\">Coffee Shop</span><span class=\"ds-brand-tag\">WORKSPACE</span></span></div>",
+      "css": ".ds-brand { display:flex; align-items:center; gap:0.75rem; } .ds-brand-icon { display:flex; align-items:center; justify-content:center; width:2.75rem; height:2.75rem; border-radius:1rem; background:#fbbf24; color:#0c0a09; } .ds-brand-icon svg { width:1.5rem; height:1.5rem; } .ds-brand-name { display:block; font:600 1.125rem/1.3 ui-sans-serif,system-ui,sans-serif; letter-spacing:-0.015em; color:#fafaf9; } .ds-brand-tag { display:block; margin-top:0.125rem; font:600 0.625rem/1.4 ui-sans-serif,system-ui,sans-serif; letter-spacing:0.18em; color:rgba(251,191,36,0.8); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Counter at Dawn",
+    "overview": "Before the first customer comes in, the shop is quiet and everything is ready: the espresso machine is warmed, the order slips are in reach, the ledger is honest. This system serves staff standing at that counter, half-caffeinated and mid-rush — calm confidence, nothing decorative that isn't useful, and a single warm accent used the way the shop uses its good honey: sparingly, on purpose, where it matters. It is warm-utilitarian by choice, not by default. Warmth shows up in the materials (charcoal-brown sidebar, paper-warm backgrounds, honey), utilitarianism in the discipline (one accent, few radii, borders and tonal layers over ornament, obvious focus states, motion only where it helps the task). Nothing in the app pretends to be more than it is: no glossy marketing theatrics inside the shift, no fake capability.",
+    "keyCharacteristics": [
+      "Tonal layering, not chrome — the dark sidebar against warm paper carries the depth; shadows stay quiet.",
+      "One accent — Honey appears only where attention or warmth is functional.",
+      "Density where it counts — staff screens privilege scan speed over whitespace.",
+      "Steady and forgiving — generous hit targets, obvious focus, calm hover, forgiving error paths.",
+      "Counter truth — real numbers, real orders, real states; no illustrative skeletons pretending to be content."
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Honey 700 covers ≤10% of any screen. Its rarity marks actions and brand; spending it on decoration destroys it.", "section": "colors" },
+      { "name": "The Warm-Neutral Rule", "body": "No pure #ffffff page background and no blue-grays; neutrals stay in the stone family. Pure white exists only as a card surface against Roast 100.", "section": "colors" },
+      { "name": "The Tint Rule", "body": "Colored surfaces use tints of the same family for secondary text — never neutral gray on a colored ground.", "section": "colors" },
+      { "name": "The Same-Family Rule", "body": "One sans family, weights 400/500/600. No italics, no bold >600, no tracking tighter than −0.04em.", "section": "typography" },
+      { "name": "The No-Kicker Rule", "body": "No eyebrow text above headings. The heading carries the hierarchy alone.", "section": "typography" },
+      { "name": "The Flat-Rest Rule", "body": "Surfaces are flat at rest. Shadows appear only as a response to state (hover, elevation, focus). If it isn't state, it isn't shadow.", "section": "elevation" },
+      { "name": "The One-Plane Rule", "body": "Never stack more than two elevated planes over the paper (card → drawer). Three includes an error.", "section": "elevation" }
+    ],
+    "dos": [
+      "Design for the busiest minute of the day: few flows, obvious states, forgiving corrections (refunds, cancels).",
+      "Keep the accent rare and load-bearing; let Roast carry the neutrals.",
+      "Use real data in every screen — empty states name the missing action, errors name the problem and the recovery.",
+      "Prefer borders and tonal layers over shadows and ornament.",
+      "Keep one icon family, one accent, one radius vocabulary, one typeface."
+    ],
+    "donts": [
+      "Don't add a second accent, a gradient heat, or colored glows to enliven an operational screen.",
+      "Don't round fully (pills) or invent new radii; don't nest cards inside cards.",
+      "Don't use gray text on colored grounds; use the tint rule.",
+      "Don't write kickers above headings or section numbers that don't carry sequence information.",
+      "Don't fake capability — no placeholder charts with invented values; no coming-soon modules.",
+      "Don't change the money format, tax, or permission model for visual reasons — the UI explains, the backend decides."
+    ]
+  }
+}
