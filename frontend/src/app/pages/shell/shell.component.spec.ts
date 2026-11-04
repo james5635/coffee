@@ -90,6 +90,45 @@ describe('ShellComponent', () => {
     expect(navLink(fixture, 'payments')).toBeTruthy();
   });
 
+  it('toggles the mobile drawer and reflects state on the toggle button', async () => {
+    const fixture = await createComponent();
+    const el = fixture.nativeElement as HTMLElement;
+    const toggle = el.querySelector<HTMLButtonElement>('[data-nav-toggle]')!;
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('closes the drawer on Escape and on backdrop click', async () => {
+    const fixture = await createComponent();
+    const el = fixture.nativeElement as HTMLElement;
+    const toggle = el.querySelector<HTMLButtonElement>('[data-nav-toggle]')!;
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    toggle.click();
+    fixture.detectChanges();
+    const backdrop = el.querySelector<HTMLButtonElement>(
+      'button[aria-label="Close workspace menu"]',
+    )!;
+    backdrop.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('logs out and returns to the sign-in screen', async () => {
     const fixture = await createComponent();
     const router = TestBed.inject(Router);

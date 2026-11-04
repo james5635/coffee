@@ -1,112 +1,274 @@
-<div class="flex min-h-dvh flex-col bg-stone-100">
-  <header class="bg-white shadow-sm ring-1 ring-stone-200">
-    <div
-      class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3"
+<div class="flex min-h-dvh bg-stone-100 text-stone-900">
+  <!-- Mobile top bar (desktop uses the sidebar directly) -->
+  <div
+    class="fixed inset-x-0 top-0 z-30 flex items-center justify-between gap-3 bg-stone-950 py-3 pl-4 pr-3 text-stone-100 md:hidden"
+    [class.hidden]="sidebarOpen()"
+  >
+    <a
+      routerLink="/"
+      class="flex items-center gap-2.5 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+      aria-label="Coffee Shop — home"
     >
+      <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400 text-stone-950">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="h-5 w-5"
+          aria-hidden="true"
+        >
+          <path d="M5 10h11v4.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5V10Z" />
+          <path d="M16 11.25h1.9a2.35 2.35 0 0 1 0 4.7H16" />
+          <path d="M8 7.2c0-.9.8-.9.8-1.8M11.5 7.2c0-.9.8-.9.8-1.8M15 7.2c0-.9.8-.9.8-1.8" />
+        </svg>
+      </span>
+      <span class="text-base font-semibold tracking-tight">Coffee Shop</span>
+    </a>
+    <button
+      type="button"
+      data-nav-toggle
+      (click)="toggleSidebar()"
+      [attr.aria-expanded]="sidebarOpen()"
+      aria-controls="workspace-sidebar"
+      aria-label="Toggle workspace menu"
+      class="rounded-lg p-2 text-stone-200 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+    >
+      @if (sidebarOpen()) {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="h-6 w-6" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      } @else {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="h-6 w-6" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      }
+    </button>
+  </div>
+
+  <!-- Mobile backdrop -->
+  @if (sidebarOpen()) {
+    <button
+      type="button"
+      aria-label="Close workspace menu"
+      (click)="closeSidebar()"
+      class="fixed inset-0 z-20 bg-stone-950/60 md:hidden"
+    ></button>
+  }
+
+  <!-- Left sidebar: static on desktop, off-canvas drawer on mobile -->
+  <aside
+    id="workspace-sidebar"
+    aria-label="Workspace"
+    class="sidebar fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-stone-950 text-stone-200 md:static md:z-auto md:w-80"
+    [class.open]="sidebarOpen()"
+  >
+    <div class="flex items-center gap-3 px-6 pb-8 pt-6 md:pt-7">
       <a
         routerLink="/"
-        class="text-lg font-semibold tracking-tight text-stone-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        (click)="closeSidebar()"
+        class="flex flex-1 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
       >
-        Coffee Shop
+        <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-400 text-stone-950">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-6 w-6"
+            aria-hidden="true"
+          >
+            <path d="M5 10h11v4.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5V10Z" />
+            <path d="M16 11.25h1.9a2.35 2.35 0 0 1 0 4.7H16" />
+            <path d="M8 7.2c0-.9.8-.9.8-1.8M11.5 7.2c0-.9.8-.9.8-1.8M15 7.2c0-.9.8-.9.8-1.8" />
+          </svg>
+        </span>
+        <span>
+          <span class="block text-lg font-semibold tracking-tight text-stone-50">Coffee Shop</span>
+          <span class="mt-0.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-amber-400/80">Workspace</span>
+        </span>
       </a>
-      <nav aria-label="Primary" class="flex flex-wrap items-center gap-1">
-        <a
-          routerLink="/menu"
-          data-nav="menu"
-          routerLinkActive="bg-stone-100"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-        >
-          Menu
-        </a>
-        <a
-          routerLink="/order"
-          data-nav="order"
-          routerLinkActive="bg-stone-100"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-        >
-          New order
-        </a>
-        @if (canViewPrepQueue()) {
-          <a
-            routerLink="/prep"
-            data-nav="prep"
-            routerLinkActive="bg-stone-100"
-            class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-          >
-            Prep queue
-          </a>
-        }
-        @if (canManagePayments()) {
-          <a
-            routerLink="/payments"
-            data-nav="payments"
-            routerLinkActive="bg-stone-100"
-            class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-          >
-            Payments
-          </a>
-        }
-        @if (canViewReports()) {
-          <a
-            routerLink="/reports"
-            data-nav="reports"
-            routerLinkActive="bg-stone-100"
-            class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-          >
-            Sales reports
-          </a>
-        }
-        <button
-          type="button"
-          data-logout
-          (click)="logout()"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-300 transition-colors hover:bg-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
-        >
-          Log out
-        </button>
-      </nav>
+      <button
+        type="button"
+        (click)="closeSidebar()"
+        aria-label="Close workspace menu"
+        class="rounded-lg p-2 text-stone-300 transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 md:hidden"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="h-6 w-6" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" />
+        </svg>
+      </button>
     </div>
-  </header>
 
-  <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-    <h1 class="text-2xl font-semibold tracking-tight text-stone-900">Welcome back</h1>
-    <p class="mt-2 text-sm text-stone-500">
-      Browse the menu, take an order, or jump into the staff workspace.
-    </p>
+    <nav aria-label="Primary" class="flex-1 space-y-1.5 px-4">
+      <a
+        routerLink="/menu"
+        data-nav="menu"
+        routerLinkActive="bg-amber-400/10 text-amber-300"
+        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-300 transition-colors hover:bg-white/5 hover:text-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true">
+          <path d="M5 10h11v4.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5V10Z" />
+          <path d="M16 11.25h1.9a2.35 2.35 0 0 1 0 4.7H16" />
+        </svg>
+        <span>Menu</span>
+        <span class="ml-auto text-xs font-normal text-stone-500">Public</span>
+      </a>
+      <a
+        routerLink="/order"
+        data-nav="order"
+        routerLinkActive="bg-amber-400/10 text-amber-300"
+        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-300 transition-colors hover:bg-white/5 hover:text-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true">
+          <path d="M6.5 3.5h11V21l-2.2-1.5-1.8 1.5-1.8-1.5L9.9 21l-1.4-1.5L6.5 21V3.5Z" />
+          <path d="M9.8 8.5h4.4M9.8 12.5h4.4" />
+        </svg>
+        <span>New order</span>
+      </a>
+      @if (canViewPrepQueue()) {
+        <a
+          routerLink="/prep"
+          data-nav="prep"
+          routerLinkActive="bg-amber-400/10 text-amber-300"
+          class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-300 transition-colors hover:bg-white/5 hover:text-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3 2" />
+          </svg>
+          <span>Prep queue</span>
+        </a>
+      }
+      @if (canManagePayments()) {
+        <a
+          routerLink="/payments"
+          data-nav="payments"
+          routerLinkActive="bg-amber-400/10 text-amber-300"
+          class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-300 transition-colors hover:bg-white/5 hover:text-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true">
+            <rect x="3" y="7.25" width="18" height="9.5" rx="2" />
+            <circle cx="12" cy="12" r="2.25" />
+            <path d="M6.75 10.5h.01M17.25 13.5h.01" />
+          </svg>
+          <span>Payments</span>
+        </a>
+      }
+      @if (canViewReports()) {
+        <a
+          routerLink="/reports"
+          data-nav="reports"
+          routerLinkActive="bg-amber-400/10 text-amber-300"
+          class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-300 transition-colors hover:bg-white/5 hover:text-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true">
+            <path d="M4.5 19.5h15" />
+            <path d="M7.5 16.5v-5M12.5 16.5V7.5M17.5 16.5v-8" />
+          </svg>
+          <span>Sales reports</span>
+        </a>
+      }
+    </nav>
 
-    <nav aria-label="Workspace" class="mt-8 grid gap-4 sm:grid-cols-2">
+    <div class="border-t border-white/[0.07] p-4">
+      <button
+        type="button"
+        data-logout
+        (click)="logout()"
+        class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-stone-300 transition-colors hover:bg-white/5 hover:text-stone-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 shrink-0 text-stone-500" aria-hidden="true">
+          <path d="M14 8V6.5A2.5 2.5 0 0 0 11.5 4h-5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20h5a2.5 2.5 0 0 0 2.5-2.5V16" />
+          <path d="M9.5 12h9M15.5 9.25l2.75 2.75-2.75 2.75" />
+        </svg>
+        <span>Log out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Workspace content -->
+  <main class="w-full flex-1 px-4 pb-12 pt-[4.5rem] sm:px-6 md:px-10 md:pt-10">
+    <header class="max-w-3xl">
+      <h1 class="text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl">
+        Welcome back
+      </h1>
+      <p class="mt-2 max-w-xl text-sm leading-6 text-stone-500">
+        Browse the menu, take an order, or jump into the staff workspace. Everything you need
+        for a smooth shift is on the left.
+      </p>
+    </header>
+
+    <nav aria-label="Workspace" class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <a
         routerLink="/menu"
         data-card="menu"
-        class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        class="group flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
       >
-        <h2 class="text-lg font-semibold text-stone-900">Menu</h2>
-        <p class="mt-1 text-sm text-stone-500">
-          See categories, products, and modifier choices. This screen is public.
-        </p>
+        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+            <path d="M5 10h11v4.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5V10Z" />
+            <path d="M16 11.25h1.9a2.35 2.35 0 0 1 0 4.7H16" />
+          </svg>
+        </span>
+        <span class="mt-4 flex items-center justify-between gap-3">
+          <span class="text-base font-semibold text-stone-900">Menu</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-stone-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-amber-700" aria-hidden="true">
+            <path d="M4.5 12h15M13.5 6.5l6 5.5-6 5.5" />
+          </svg>
+        </span>
+        <span class="mt-1 text-sm leading-6 text-stone-500">
+          Categories, products, and modifier choices. This screen is public.
+        </span>
       </a>
 
       <a
         routerLink="/order"
         data-card="order"
-        class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+        class="group flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
       >
-        <h2 class="text-lg font-semibold text-stone-900">New order</h2>
-        <p class="mt-1 text-sm text-stone-500">
+        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+            <path d="M6.5 3.5h11V21l-2.2-1.5-1.8 1.5-1.8-1.5L9.9 21l-1.4-1.5L6.5 21V3.5Z" />
+            <path d="M9.8 8.5h4.4M9.8 12.5h4.4" />
+          </svg>
+        </span>
+        <span class="mt-4 flex items-center justify-between gap-3">
+          <span class="text-base font-semibold text-stone-900">New order</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-stone-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-amber-700" aria-hidden="true">
+            <path d="M4.5 12h15M13.5 6.5l6 5.5-6 5.5" />
+          </svg>
+        </span>
+        <span class="mt-1 text-sm leading-6 text-stone-500">
           Build a guest or customer order, confirm it, and hand off payment to staff.
-        </p>
+        </span>
       </a>
 
       @if (canViewPrepQueue()) {
         <a
           routerLink="/prep"
           data-card="prep"
-          class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          class="group flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
         >
-          <h2 class="text-lg font-semibold text-stone-900">Prep queue</h2>
-          <p class="mt-1 text-sm text-stone-500">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-5 w-5" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5V12l3 2" />
+            </svg>
+          </span>
+          <span class="mt-4 flex items-center justify-between gap-3">
+            <span class="text-base font-semibold text-stone-900">Prep queue</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-stone-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-amber-700" aria-hidden="true">
+              <path d="M4.5 12h15M13.5 6.5l6 5.5-6 5.5" />
+            </svg>
+          </span>
+          <span class="mt-1 text-sm leading-6 text-stone-500">
             Move accepted orders into preparation and mark them ready for pickup.
-          </p>
+          </span>
         </a>
       }
 
@@ -114,12 +276,24 @@
         <a
           routerLink="/payments"
           data-card="payments"
-          class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          class="group flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
         >
-          <h2 class="text-lg font-semibold text-stone-900">Payments &amp; refunds</h2>
-          <p class="mt-1 text-sm text-stone-500">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-5 w-5" aria-hidden="true">
+              <rect x="3" y="7.25" width="18" height="9.5" rx="2" />
+              <circle cx="12" cy="12" r="2.25" />
+              <path d="M6.75 10.5h.01M17.25 13.5h.01" />
+            </svg>
+          </span>
+          <span class="mt-4 flex items-center justify-between gap-3">
+            <span class="text-base font-semibold text-stone-900">Payments &amp; refunds</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-stone-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-amber-700" aria-hidden="true">
+              <path d="M4.5 12h15M13.5 6.5l6 5.5-6 5.5" />
+            </svg>
+          </span>
+          <span class="mt-1 text-sm leading-6 text-stone-500">
             Look up an order, record counter payments, and issue authorized refunds.
-          </p>
+          </span>
         </a>
       }
 
@@ -127,12 +301,23 @@
         <a
           routerLink="/reports"
           data-card="reports"
-          class="group rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-colors hover:ring-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
+          class="group flex flex-col rounded-2xl bg-white p-5 shadow-sm ring-1 ring-stone-200 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-amber-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
         >
-          <h2 class="text-lg font-semibold text-stone-900">Sales reports</h2>
-          <p class="mt-1 text-sm text-stone-500">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" class="h-5 w-5" aria-hidden="true">
+              <path d="M4.5 19.5h15" />
+              <path d="M7.5 16.5v-5M12.5 16.5V7.5M17.5 16.5v-8" />
+            </svg>
+          </span>
+          <span class="mt-4 flex items-center justify-between gap-3">
+            <span class="text-base font-semibold text-stone-900">Sales reports</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-stone-400 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-amber-700" aria-hidden="true">
+              <path d="M4.5 12h15M13.5 6.5l6 5.5-6 5.5" />
+            </svg>
+          </span>
+          <span class="mt-1 text-sm leading-6 text-stone-500">
             Daily totals, sales trends, top items, hourly orders, and payment split.
-          </p>
+          </span>
         </a>
       }
     </nav>
