@@ -38,10 +38,9 @@ task migrate
 task seed
 ```
 
-Start the backend and frontend from the repository root:
+Task `backend` defaults `DATABASE_URL` to `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable` (same default as `task migrate`/`task seed`). To point at a different database, export `DATABASE_URL` before running the tasks:
 
 ```sh
-export DATABASE_URL='postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable'
 task dev
 ```
 

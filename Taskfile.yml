@@ -72,6 +72,8 @@ tasks:
   backend:
     desc: Start the Go API server
     dir: backend
+    env:
+      DATABASE_URL: '{{.DATABASE_URL | default `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable`}}'
     cmds:
       - go run .
 
