@@ -80,6 +80,26 @@ tasks:
     cmds:
       - task --parallel build:backend build:frontend
 
+  verify:
+    desc: Verify the backend and frontend (tests, build, codegen freshness)
+    cmds:
+      - task --parallel verify:backend verify:frontend
+
+  verify:backend:
+    desc: Verify the backend (tests and build)
+    dir: backend
+    cmds:
+      - go test ./...
+      - go build ./...
+
+  verify:frontend:
+    desc: Verify the frontend (tests, build, codegen freshness)
+    dir: frontend
+    cmds:
+      - npm test
+      - npm run build
+      - npm run codegen:check
+
   build:frontend:
     dir: frontend
     cmds:
