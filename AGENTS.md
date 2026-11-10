@@ -3,7 +3,7 @@
 ## Project shape
 
 - `backend/` is a Go GraphQL API backed by PostgreSQL. `frontend/` is an Angular app (Apollo Client + GraphQL Code Generator for the GraphQL transport).
-- Object storage is SeaweedFS (`compose.yaml`, service `seaweedfs`, `weed mini`, S3 API on `:8333`): `my-bucket/products/` holds product images seeded from `assets/products/` via `task objects:seed`. The Angular dev proxy rewrites `/products/*` to the bucket (see `frontend/proxy.conf.json`); production hosts need the same path-style rewrite. `seaweedfs/s3.json` carries anonymous Read plus dev-only admin credentials.
+- Object storage is SeaweedFS (`compose.yaml`, service `seaweedfs`, `weed mini`, S3 API on `:8333`): `my-bucket/products/` holds product images seeded from `assets/products/` via `task objects:seed` (also run as part of `task seed`). The Angular dev proxy rewrites `/products/*` to the bucket (see `frontend/proxy.conf.json`); production hosts need the same path-style rewrite. `seaweedfs/s3.json` carries anonymous Read plus dev-only admin credentials.
 - Keep backend dependencies flowing from GraphQL resolvers to `service/` to `repository/` to generated `db/` queries. Services own business rules; `repository/` defines the shared types and translates persistence rows into them.
 - Put shared business types in `backend/repository/` and request identity helpers in `backend/utils/auth/`.
 - Protected service operations read the principal from context and check permissions there. Public menu reads and guest order creation are intentional exceptions. The bearer middleware (`backend/main.go` — `bearerMiddleware`) populates the principal from the Phase 1 JWT; protected operations work with a valid token and fail closed without one.

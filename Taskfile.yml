@@ -47,8 +47,8 @@ tasks:
       - goose -dir db/migrations postgres "{{.DATABASE_URL | default `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable`}}" down
 
   seed:
-    desc: Apply database seed data
-    deps: [migrate]
+    desc: Apply database seed data and upload bundled assets to object storage
+    deps: [migrate, objects:seed]
     dir: backend
     cmds:
       - goose -dir db/seeds -no-versioning postgres "{{.DATABASE_URL | default `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable`}}" up
@@ -77,7 +77,7 @@ tasks:
       AWS_SECRET_ACCESS_KEY: secret
     cmds:
       - aws s3 mb s3://my-bucket --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}" || true
-      - aws s3 cp assets/products s3://my-bucket/products --recursive --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}"
+      - aws s3 cp assets/products s3://my-bucket/products --recursive --exclude "ATTRIBUTION.md" --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}"
 
   frontend:
     desc: Start the Angular development server

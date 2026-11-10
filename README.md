@@ -34,10 +34,7 @@ Install dependencies, start PostgreSQL, and prepare the schema and sample menu d
 ```sh
 task install
 task postgres:detached
-task seaweedfs:detached   # object storage for images/files (S3 API on :8333)
-task objects:seed         # create the bucket and upload the bundled product images
-task migrate
-task seed
+task seed       # migrations + database seed data + upload bundled assets to object storage
 ```
 
 Task `backend` defaults `DATABASE_URL` to `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable` (same default as `task migrate`/`task seed`). To point at a different database, export `DATABASE_URL` before running the tasks:
@@ -63,7 +60,7 @@ task generate       # regenerate sqlc database code
 task build          # build backend and frontend
 task verify         # run the full backend+frontend verification gate
 task migrate        # apply Goose migrations
-task seed           # apply sample data
+task seed           # migrations + sample data + upload bundled assets to object storage (via objects:seed)
 task seaweedfs:detached  # start SeaweedFS (S3 object storage) in the background
 task objects:seed   # upload bundled assets to the SeaweedFS bucket
 ```
