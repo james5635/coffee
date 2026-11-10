@@ -61,8 +61,10 @@ task build          # build backend and frontend
 task verify         # run the full backend+frontend verification gate
 task migrate        # apply Goose migrations
 task seed           # migrations + sample data + upload bundled assets to object storage (via objects:seed)
+task unseed         # remove seed data (DB seed rows + SeaweedFS bucket) — undo of task seed
 task seaweedfs:detached  # start SeaweedFS (S3 object storage) in the background
 task objects:seed   # upload bundled assets to the SeaweedFS bucket
+task objects:unseed # remove the SeaweedFS bucket and all objects in it
 ```
 
 Object storage: [SeaweedFS](https://github.com/seaweedfs/seaweedfs) runs all-in-one via `weed mini` in Docker Compose (`compose.yaml`, service `seaweedfs`), exposing the S3 API on `:8333`. The `my-bucket` bucket holds the product images under `products/` (source of truth: `assets/products/` in this repo). `seaweedfs/s3.json` configures two identities: anonymous Read (public product images load unsigned in `<img>` tags) and admin `admin/secret` with full access (signed writes used by `task objects:seed`; dev credentials only — replace for production). All credentials are local-development only, matching the seeded database users and demo passwords.

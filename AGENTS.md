@@ -28,4 +28,4 @@
 - `PRODUCT.md` — durable product truth (users, positioning, constraints, principles). Read before changing scope, positioning, or anything user-facing in a way that outlives the task.
 - `DESIGN.md` — the visual design system (North Star "The Counter at Dawn"; Brewed Honey accent on Roast Stone neutrals). Read before UI work; `.impeccable/design.json` is its sidecar.
 - `docs/superpowers/specs/` and `docs/superpowers/plans/` — design docs and implementation plans for past phases.
-- The seed is idempotent (`notes='report-demo'` rows) — `task seed` may be run repeatedly; demo accounts use password `password123`.
+- The seed is idempotent (`notes='report-demo'` rows) — `task seed` may be run repeatedly; demo accounts use password `password123`. `task unseed` removes all seed data (DB rows and the SeaweedFS bucket) — destructive in intent.

@@ -79,6 +79,27 @@ tasks:
       - aws s3 mb s3://my-bucket --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}" || true
       - aws s3 cp assets/products s3://my-bucket/products --recursive --exclude "ATTRIBUTION.md" --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}"
 
+  objects:unseed:
+    desc: Remove all objects and the bucket from SeaweedFS (object-storage counterpart of objects:seed)
+    deps: [seaweedfs:detached]
+    env:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: secret
+    cmds:
+      - |
+        if aws s3api head-bucket --bucket my-bucket --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}" 2>/dev/null; then
+          aws s3 rb s3://my-bucket --force --endpoint-url "{{.S3_ENDPOINT | default `http://localhost:8333`}}"
+        else
+          echo "bucket my-bucket does not exist — nothing to unseed"
+        fi
+
+  unseed:
+    desc: Remove seed data (DB seed rows and object-storage assets) — undo of task seed
+    deps: [objects:unseed]
+    dir: backend
+    cmds:
+      - goose -dir db/seeds -no-versioning postgres "{{.DATABASE_URL | default `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable`}}" reset
+
   frontend:
     desc: Start the Angular development server
     dir: frontend
