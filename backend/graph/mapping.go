@@ -214,6 +214,20 @@ func graphSalesSummary(s repository.SalesSummary) *model.SalesSummary {
 	}
 }
 
+// viewer maps a service Viewer to the GraphQL Viewer.
+func viewer(v service.Viewer) *model.Viewer {
+	roles := v.Roles
+	if roles == nil {
+		roles = []string{}
+	}
+	return &model.Viewer{
+		ID:          graphID(v.ID),
+		Email:       v.Email,
+		DisplayName: v.DisplayName,
+		Roles:       roles,
+	}
+}
+
 // authPayload maps a service TokenPair to the GraphQL AuthPayload.
 func authPayload(pair service.TokenPair) *model.AuthPayload {
 	return &model.AuthPayload{

@@ -158,6 +158,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Categories       func(childComplexity int) int
+		Me               func(childComplexity int) int
 		Order            func(childComplexity int, id string) int
 		PreparationQueue func(childComplexity int) int
 		Products         func(childComplexity int, categoryID *string) int
@@ -202,6 +203,13 @@ type ComplexityRoot struct {
 		Quantity    func(childComplexity int) int
 		Revenue     func(childComplexity int) int
 	}
+
+	Viewer struct {
+		DisplayName func(childComplexity int) int
+		Email       func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Roles       func(childComplexity int) int
+	}
 }
 
 // endregion ***************************** api!.gotpl *****************************
@@ -223,6 +231,7 @@ type QueryResolver interface {
 	Order(ctx context.Context, id string) (*model.Order, error)
 	PreparationQueue(ctx context.Context) ([]*model.Order, error)
 	SalesSummary(ctx context.Context) (*model.SalesSummary, error)
+	Me(ctx context.Context) (*model.Viewer, error)
 }
 
 // endregion ************************** generated!.gotpl **************************
@@ -762,6 +771,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Query.Categories(childComplexity), true
 
+	case "Query.me":
+		if e.ComplexityRoot.Query.Me == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Me(childComplexity), true
 	case "Query.order":
 		if e.ComplexityRoot.Query.Order == nil {
 			break
@@ -945,6 +960,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.TopItem.Revenue(childComplexity), true
+
+	case "Viewer.displayName":
+		if e.ComplexityRoot.Viewer.DisplayName == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.DisplayName(childComplexity), true
+	case "Viewer.email":
+		if e.ComplexityRoot.Viewer.Email == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.Email(childComplexity), true
+	case "Viewer.id":
+		if e.ComplexityRoot.Viewer.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.ID(childComplexity), true
+	case "Viewer.roles":
+		if e.ComplexityRoot.Viewer.Roles == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Viewer.Roles(childComplexity), true
 
 	}
 	return 0, false
@@ -1346,6 +1386,20 @@ func (ec *executionContext) childFields_TopItem(ctx context.Context, field graph
 		return ec.fieldContext_TopItem_revenue(ctx, field)
 	}
 	return nil, fmt.Errorf("no field named %q was found under type TopItem", field.Name)
+}
+
+func (ec *executionContext) childFields_Viewer(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_Viewer_id(ctx, field)
+	case "email":
+		return ec.fieldContext_Viewer_email(ctx, field)
+	case "displayName":
+		return ec.fieldContext_Viewer_displayName(ctx, field)
+	case "roles":
+		return ec.fieldContext_Viewer_roles(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type Viewer", field.Name)
 }
 
 func (ec *executionContext) childFields___Directive(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
@@ -3826,6 +3880,38 @@ func (ec *executionContext) fieldContext_Query_salesSummary(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_me(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Me(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *model.Viewer) graphql.Marshaler {
+			return ec.marshalNViewer2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐViewer(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Viewer(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4524,6 +4610,98 @@ func (ec *executionContext) _TopItem_revenue(ctx context.Context, field graphql.
 }
 func (ec *executionContext) fieldContext_TopItem_revenue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("TopItem", field, false, false, "Decimal")
+}
+
+func (ec *executionContext) _Viewer_id(ctx context.Context, field graphql.CollectedField, obj *model.Viewer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Viewer_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Viewer_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Viewer", field, false, false, "ID")
+}
+
+func (ec *executionContext) _Viewer_email(ctx context.Context, field graphql.CollectedField, obj *model.Viewer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Viewer_email(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Email, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Viewer_email(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Viewer", field, false, false, "String")
+}
+
+func (ec *executionContext) _Viewer_displayName(ctx context.Context, field graphql.CollectedField, obj *model.Viewer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Viewer_displayName(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.DisplayName, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Viewer_displayName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Viewer", field, false, false, "String")
+}
+
+func (ec *executionContext) _Viewer_roles(ctx context.Context, field graphql.CollectedField, obj *model.Viewer) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Viewer_roles(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Roles, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []string) graphql.Marshaler {
+			return ec.marshalNString2ᚕstringᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Viewer_roles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("Viewer", field, false, false, "String")
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -6696,6 +6874,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				func(ctx context.Context) graphql.Marshaler {
 					return ec._Query_salesSummary(ctx, field)
 				})
+		case "me":
+			out.ResolveRootConcurrently(innerCtx, ec.OperationContext, i,
+				true, true,
+				func(ctx context.Context) graphql.Marshaler {
+					return ec._Query_me(ctx, field)
+				})
 		case "__type":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -6967,6 +7151,54 @@ func (ec *executionContext) _TopItem(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "revenue":
 			out.Values[i] = ec._TopItem_revenue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	if n := len(deferred.Defers); n > 0 {
+		atomic.AddInt32(&ec.Deferred, int32(min(n, math.MaxInt32)))
+		ec.ProcessDeferredGroup(deferred)
+	}
+
+	return out
+}
+
+var viewerImplementors = []string{"Viewer"}
+
+func (ec *executionContext) _Viewer(ctx context.Context, sel ast.SelectionSet, obj *model.Viewer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, viewerImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := graphql.NewDeferredGroup(ctx)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Viewer")
+		case "id":
+			out.Values[i] = ec._Viewer_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "email":
+			out.Values[i] = ec._Viewer_email(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "displayName":
+			out.Values[i] = ec._Viewer_displayName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "roles":
+			out.Values[i] = ec._Viewer_roles(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -7819,6 +8051,35 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	vSlice := graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
 	res, err := graphql.UnmarshalTime(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -7855,6 +8116,14 @@ func (ec *executionContext) marshalNTopItem2ᚖgithubᚗcomᚋjames5635ᚋcoffee
 		return graphql.Null
 	}
 	return ec._TopItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNViewer2ᚖgithubᚗcomᚋjames5635ᚋcoffeeᚋbackendᚋgraphᚋmodelᚐViewer(ctx context.Context, sel ast.SelectionSet, v *model.Viewer) graphql.Marshaler {
+	if v == nil {
+		graphql.AddInvalidNullError(ctx, "Viewer!")
+		return graphql.Null
+	}
+	return ec._Viewer(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

@@ -228,6 +228,7 @@ export type Product = {
 export type Query = {
   __typename?: 'Query';
   categories: Array<Category>;
+  me: Viewer;
   order: Order;
   preparationQueue: Array<Order>;
   products: Array<Product>;
@@ -293,4 +294,12 @@ export type TopItem = {
   productName: Scalars['String']['output'];
   quantity: Scalars['Int']['output'];
   revenue: Scalars['Decimal']['output'];
+};
+
+export type Viewer = {
+  __typename?: 'Viewer';
+  displayName: Scalars['String']['output'];
+  email: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  roles: Array<Scalars['String']['output']>;
 };

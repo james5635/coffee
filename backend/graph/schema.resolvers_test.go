@@ -24,6 +24,8 @@ type fakeAuthService struct {
 	logoutErr    error
 	logoutToken  string
 	logoutCalls  int
+	viewer       service.Viewer
+	viewerErr    error
 }
 
 func (f *fakeAuthService) Login(ctx context.Context, email, password string) (service.TokenPair, error) {
@@ -43,6 +45,10 @@ func (f *fakeAuthService) Logout(ctx context.Context, refreshToken string) error
 
 func (f *fakeAuthService) Authenticate(ctx context.Context, accessToken string) (auth.Principal, error) {
 	return auth.Principal{}, nil
+}
+
+func (f *fakeAuthService) Viewer(ctx context.Context) (service.Viewer, error) {
+	return f.viewer, f.viewerErr
 }
 
 func TestLoginResolverMapsTokenPair(t *testing.T) {
@@ -270,5 +276,32 @@ func TestSalesSummaryResolverPropagatesForbidden(t *testing.T) {
 	code, _ := gqlErr.Extensions["code"].(string)
 	if code != "FORBIDDEN" {
 		t.Errorf("extensions.code = %q, want %q", code, "FORBIDDEN")
+	}
+}
+
+func TestMeResolverMapsViewer(t *testing.T) {
+	svc := &fakeAuthService{
+		viewer: service.Viewer{ID: 42, Email: "olive@coffee.local", DisplayName: "Olive Owner", Roles: []string{"owner_admin"}},
+	}
+	r := &queryResolver{&Resolver{Auth: svc}}
+
+	got, err := r.Me(context.Background())
+	if err != nil {
+		t.Fatalf("Me: %v", err)
+	}
+	if got.ID != "42" || got.Email != "olive@coffee.local" || got.DisplayName != "Olive Owner" {
+		t.Fatalf("Me payload mismatch: %+v", got)
+	}
+	if len(got.Roles) != 1 || got.Roles[0] != "owner_admin" {
+		t.Fatalf("Me roles mismatch: %v", got.Roles)
+	}
+}
+
+func TestMeResolverPropagatesServiceError(t *testing.T) {
+	svc := &fakeAuthService{viewerErr: service.ErrUnauthenticated}
+	r := &queryResolver{&Resolver{Auth: svc}}
+
+	if _, err := r.Me(context.Background()); !errors.Is(err, service.ErrUnauthenticated) {
+		t.Fatalf("Me: expected %v, got %v", service.ErrUnauthenticated, err)
 	}
 }

@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { signal } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { AuthStateService } from '../services/auth-state.service';
+import { ProfileService, Profile } from '../services/profile.service';
 import { WorkspaceLayoutComponent } from './workspace-layout.component';
 
 // Builds an unsigned token shaped like the backend's access token.
@@ -18,7 +20,15 @@ const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 describe('WorkspaceLayoutComponent', () => {
   const logout = vi.fn().mockResolvedValue(undefined);
+  const profileLoad = vi.fn().mockResolvedValue(true);
+  const profileClear = vi.fn();
   let authState: AuthStateService;
+  let profileSignal: ReturnType<typeof signal<Profile | null>>;
+  const profileMock = () => ({
+    profile: profileSignal.asReadonly(),
+    load: profileLoad,
+    clear: profileClear,
+  });
 
   const navLink = (
     fixture: ComponentFixture<WorkspaceLayoutComponent>,
@@ -36,9 +46,21 @@ describe('WorkspaceLayoutComponent', () => {
 
   beforeEach(() => {
     logout.mockClear();
+    profileLoad.mockClear();
+    profileClear.mockClear();
+    profileSignal = signal<Profile | null>({
+      id: '1',
+      email: 'olive@coffee.local',
+      displayName: 'Olive Owner',
+      roles: ['owner_admin'],
+    });
     TestBed.configureTestingModule({
       imports: [WorkspaceLayoutComponent],
-      providers: [provideRouter([]), { provide: AuthService, useValue: { logout } }],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { logout } },
+        { provide: ProfileService, useValue: profileMock() },
+      ],
     });
     authState = TestBed.inject(AuthStateService);
     authState.setAccessToken(tokenWithClaims({ permissions: [] }));
@@ -103,22 +125,60 @@ describe('WorkspaceLayoutComponent', () => {
     expect(navLink(fixture, 'reports')).toBeTruthy();
   });
 
-  it('shows Sign in instead of Log out when unauthenticated', async () => {
+  it('shows Sign in instead of the profile row when unauthenticated', async () => {
     authState.clearSession();
 
     const fixture = await createComponent();
     const el = fixture.nativeElement as HTMLElement;
 
+    expect(el.querySelector('[data-profile-toggle]')).toBeNull();
     expect(el.querySelector('[data-logout]')).toBeNull();
     expect(el.querySelector('[data-signin]')).toBeTruthy();
   });
 
-  it('shows Log out instead of Sign in when authenticated', async () => {
+  it('shows the profile row with name, role and initial avatar when authenticated', async () => {
+    authState.setAccessToken(tokenWithClaims({ roles: ['owner_admin'], permissions: [] }));
+
     const fixture = await createComponent();
     const el = fixture.nativeElement as HTMLElement;
 
-    expect(el.querySelector('[data-logout]')).toBeTruthy();
+    expect(el.textContent).toContain('Olive Owner');
+    expect(el.textContent).toContain('Owner');
+    expect(el.querySelector('[data-profile-toggle]')?.textContent).toContain('O');
     expect(el.querySelector('[data-signin]')).toBeNull();
+    expect(el.querySelector('[data-logout]')).toBeNull();
+  });
+
+  it('opens the profile menu on click and logs out from it', async () => {
+    const fixture = await createComponent();
+    const el = fixture.nativeElement as HTMLElement;
+
+    const toggle = el.querySelector<HTMLButtonElement>('[data-profile-toggle]')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    el.querySelector<HTMLButtonElement>('[data-logout]')!.click();
+    await settle();
+    await fixture.whenStable();
+
+    expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the profile menu on Escape', async () => {
+    const fixture = await createComponent();
+    const el = fixture.nativeElement as HTMLElement;
+    const toggle = el.querySelector<HTMLButtonElement>('[data-profile-toggle]')!;
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('toggles the mobile drawer and reflects state on the toggle button', async () => {
@@ -165,9 +225,10 @@ describe('WorkspaceLayoutComponent', () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
-    (fixture.nativeElement as HTMLElement)
-      .querySelector<HTMLButtonElement>('[data-logout]')
-      ?.click();
+    const el = fixture.nativeElement as HTMLElement;
+    el.querySelector<HTMLButtonElement>('[data-profile-toggle]')!.click();
+    fixture.detectChanges();
+    el.querySelector<HTMLButtonElement>('[data-logout]')!.click();
     await settle();
     await fixture.whenStable();
 

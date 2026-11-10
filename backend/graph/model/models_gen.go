@@ -194,6 +194,13 @@ type TopItem struct {
 	Revenue     scalar.Decimal `json:"revenue"`
 }
 
+type Viewer struct {
+	ID          string   `json:"id"`
+	Email       string   `json:"email"`
+	DisplayName string   `json:"displayName"`
+	Roles       []string `json:"roles"`
+}
+
 type OrderStatus string
 
 const (

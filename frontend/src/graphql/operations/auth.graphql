@@ -19,3 +19,12 @@ mutation RefreshToken {
 mutation Logout {
   logout
 }
+
+query Me {
+  me {
+    id
+    email
+    displayName
+    roles
+  }
+}

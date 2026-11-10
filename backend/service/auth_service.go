@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -31,11 +32,20 @@ type TokenPair struct {
 
 // AuthService is the application-layer auth surface: login, refresh, logout,
 // and access-token authentication.
+// Viewer is the authenticated user's own profile.
+type Viewer struct {
+	ID          int64
+	Email       string
+	DisplayName string
+	Roles       []string
+}
+
 type AuthService interface {
 	Login(ctx context.Context, email, password string) (TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
 	Logout(ctx context.Context, refreshToken string) error
 	Authenticate(ctx context.Context, accessToken string) (auth.Principal, error)
+	Viewer(ctx context.Context) (Viewer, error)
 }
 
 type authService struct {
@@ -133,6 +143,25 @@ func (s *authService) Authenticate(ctx context.Context, accessToken string) (aut
 		return auth.Principal{}, err
 	}
 	return auth.NewPrincipal(user.ID, roleNames, permissionCodes), nil
+}
+
+// Viewer returns the authenticated principal's profile. Anonymous callers
+// fail closed with ErrUnauthenticated.
+func (s *authService) Viewer(ctx context.Context) (Viewer, error) {
+	principal, err := principalFor(ctx)
+	if err != nil {
+		return Viewer{}, err
+	}
+	user, err := s.loadActiveUser(ctx, principal.UserID)
+	if err != nil {
+		return Viewer{}, err
+	}
+	roles := make([]string, 0, len(principal.Roles))
+	for role := range principal.Roles {
+		roles = append(roles, role)
+	}
+	sort.Strings(roles)
+	return Viewer{ID: user.ID, Email: user.Email, DisplayName: user.DisplayName, Roles: roles}, nil
 }
 
 // issueTokenPair issues a fresh access token and a rotated refresh token for

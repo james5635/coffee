@@ -338,3 +338,27 @@ func TestAuthenticateRejectsExpiredToken(t *testing.T) {
 		t.Fatalf("Authenticate expired token: expected %v, got %v", ErrTokenExpired, err)
 	}
 }
+
+func TestViewerReturnsCurrentUserProfile(t *testing.T) {
+	svc := newAuthService(t, newFakeAuthRepository())
+	ctx := auth.WithPrincipal(context.Background(), auth.NewPrincipal(1, []string{"owner_admin"}, []string{"menu.read"}))
+
+	viewer, err := svc.Viewer(ctx)
+	if err != nil {
+		t.Fatalf("Viewer: %v", err)
+	}
+	if viewer.ID != 1 || viewer.Email != "alice@example.com" || viewer.DisplayName != "Alice" {
+		t.Fatalf("Viewer mismatch: %+v", viewer)
+	}
+	if len(viewer.Roles) != 1 || viewer.Roles[0] != "owner_admin" {
+		t.Fatalf("Viewer roles mismatch: %v", viewer.Roles)
+	}
+}
+
+func TestViewerAnonymousFailsClosed(t *testing.T) {
+	svc := newAuthService(t, newFakeAuthRepository())
+
+	if _, err := svc.Viewer(context.Background()); !errors.Is(err, ErrUnauthenticated) {
+		t.Fatalf("Viewer: expected %v, got %v", ErrUnauthenticated, err)
+	}
+}

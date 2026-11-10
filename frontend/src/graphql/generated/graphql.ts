@@ -25,6 +25,11 @@ export type LogoutMutationVariables = Exact<{ [key: string]: never; }>;
 
 export type LogoutMutation = { logout: boolean };
 
+export type MeQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeQuery = { me: { id: string, email: string, displayName: string, roles: Array<string> } };
+
 export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -117,6 +122,18 @@ export const LogoutDocument = {"kind":"Document","definitions":[{"kind":"Operati
   })
   export class LogoutGQL extends Apollo.Mutation<LogoutMutation, LogoutMutationVariables> {
     document = LogoutDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const MeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"roles"}}]}}]}}]} as unknown as DocumentNode;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class MeGQL extends Apollo.Query<MeQuery, MeQueryVariables> {
+    document = MeDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

@@ -214,6 +214,15 @@ func (r *queryResolver) SalesSummary(ctx context.Context) (*model.SalesSummary, 
 	return graphSalesSummary(summary), nil
 }
 
+// SalesSummary is the resolver for the salesSummary field.
+func (r *queryResolver) Me(ctx context.Context) (*model.Viewer, error) {
+	v, err := r.Auth.Viewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return viewer(v), nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 

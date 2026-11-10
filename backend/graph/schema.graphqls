@@ -155,12 +155,20 @@ type AuthPayload {
   expiresIn: Int!
 }
 
+type Viewer {
+  id: ID!
+  email: String!
+  displayName: String!
+  roles: [String!]!
+}
+
 type Query {
   categories: [Category!]!
   products(categoryId: ID): [Product!]!
   order(id: ID!): Order!
   preparationQueue: [Order!]!
   salesSummary: SalesSummary!
+  me: Viewer!
 }
 
 type SalesSnapshot {
