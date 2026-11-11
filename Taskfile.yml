@@ -151,7 +151,8 @@ tasks:
   verify:
     desc: Verify the backend and frontend (tests, build, codegen freshness)
     cmds:
-      - task --parallel verify:backend verify:frontend
+      - task verify:backend
+      - task verify:frontend
 
   verify:backend:
     desc: Verify the backend (tests and build)
