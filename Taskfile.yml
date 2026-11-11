@@ -69,6 +69,23 @@ tasks:
       - docker compose up --detach seaweedfs
       - docker compose ps seaweedfs
 
+  infra-up:
+    desc: Start infrastructure (Postgres + SeaweedFS) in the background and wait until healthy
+    cmds:
+      - docker compose up --detach --wait postgres seaweedfs
+      - docker compose ps postgres seaweedfs
+
+  infra-down:
+    desc: Stop infrastructure (postgres and seaweedfs containers, keeps volumes and images)
+    cmds:
+      - docker compose stop postgres seaweedfs
+
+  bootstrap:
+    desc: Bootstrap a fresh clone (install backend/frontend dependencies and git hooks)
+    cmds:
+      - task install
+      - task hooks:install
+
   objects:seed:
     desc: Upload bundled assets (product images) to the SeaweedFS bucket
     deps: [seaweedfs:detached]
