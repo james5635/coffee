@@ -1,0 +1,18 @@
+#!/bin/sh
+# Pre-push gate: the full project verification must pass before
+# commits leave this clone. Install once per clone with `task hooks:install`.
+# Bypass in an emergency with `git push --no-verify`.
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+cd "$ROOT"
+
+if ! command -v task >/dev/null 2>&1; then
+  echo "error: 'task' (go-task) is required for the pre-push verify." >&2
+  echo "Install it from https://taskfile.dev/installation, or push with --no-verify to skip." >&2
+  exit 1
+fi
+
+echo "→ Running 'task verify' before push..."
+task verify
+echo "✓ pre-push verify passed"

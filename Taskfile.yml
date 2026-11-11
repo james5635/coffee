@@ -125,6 +125,12 @@ tasks:
       - rm -f backend/backend
       - rm -rf frontend/dist frontend/.angular
 
+  hooks:install:
+    desc: Install git hooks (pre-push runs 'task verify' before every push)
+    cmds:
+      - git config core.hooksPath .githooks
+      - echo "Git hooks installed (.githooks). pre-push runs 'task verify'; skip with --no-verify."
+
   verify:
     desc: Verify the backend and frontend (tests, build, codegen freshness)
     cmds:
