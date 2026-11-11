@@ -43,6 +43,10 @@ func (s *stubAuthService) Authenticate(ctx context.Context, token string) (auth.
 	return s.authenticatePrincipal, s.authenticateErr
 }
 
+func (s *stubAuthService) Viewer(ctx context.Context) (service.Viewer, error) {
+	return service.Viewer{}, nil
+}
+
 func testLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }

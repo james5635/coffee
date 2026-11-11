@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { signal } from '@angular/core';
@@ -5,6 +6,9 @@ import { AuthService } from '../services/auth.service';
 import { AuthStateService } from '../services/auth-state.service';
 import { ProfileService, Profile } from '../services/profile.service';
 import { WorkspaceLayoutComponent } from './workspace-layout.component';
+
+@Component({ standalone: true, template: '' })
+class LoginStubComponent {}
 
 // Builds an unsigned token shaped like the backend's access token.
 function tokenWithClaims(claims: Record<string, unknown>): string {
@@ -57,7 +61,7 @@ describe('WorkspaceLayoutComponent', () => {
     TestBed.configureTestingModule({
       imports: [WorkspaceLayoutComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'login', component: LoginStubComponent }]),
         { provide: AuthService, useValue: { logout } },
         { provide: ProfileService, useValue: profileMock() },
       ],
