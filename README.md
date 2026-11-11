@@ -32,10 +32,9 @@ You need Docker Compose, [Task](https://taskfile.dev/), Go matching [`backend/go
 Install dependencies, start PostgreSQL, and prepare the schema and sample menu data:
 
 ```sh
-task install
+task bootstrap  # fresh clone: install backend/frontend deps + git pre-push hook
 task infra-up   # Postgres + SeaweedFS, starts in background and waits until healthy
 task seed       # migrations + database seed data + upload bundled assets to object storage
-# (or one command: `task bootstrap` = install deps + git hooks)
 ```
 
 Task `backend` defaults `DATABASE_URL` to `postgres://coffee:coffee@localhost:5432/coffee?sslmode=disable` (same default as `task migrate`/`task seed`). To point at a different database, export `DATABASE_URL` before running the tasks:
