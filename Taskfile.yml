@@ -119,6 +119,12 @@ tasks:
     cmds:
       - task --parallel build:backend build:frontend
 
+  clean:
+    desc: Remove build outputs (Go binary, frontend dist, Angular cache)
+    cmds:
+      - rm -f backend/backend
+      - rm -rf frontend/dist frontend/.angular
+
   verify:
     desc: Verify the backend and frontend (tests, build, codegen freshness)
     cmds:

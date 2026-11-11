@@ -58,6 +58,7 @@ Run `task --list` to see available workflows. Common tasks include:
 ```sh
 task generate       # regenerate sqlc database code
 task build          # build backend and frontend
+task clean          # remove build outputs (Go binary, frontend dist, Angular cache)
 task verify         # run the full backend+frontend verification gate
 task migrate        # apply Goose migrations
 task seed           # migrations + sample data + upload bundled assets to object storage (via objects:seed)
