@@ -1,0 +1,2 @@
+# Compiled Go backend binary (output of `go build ./...` in backend/)
+/backend/backend
