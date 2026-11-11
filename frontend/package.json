@@ -7,11 +7,12 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "pretest": "npm run codegen:check",
-    "test": "ng test",
+    "test": "ng test --watch=false",
     "codegen": "graphql-codegen --config codegen.ts",
     "codegen:watch": "graphql-codegen --config codegen.ts --watch",
     "codegen:check": "graphql-codegen --config codegen.ts --check",
-    "serve:ssr:frontend": "node dist/frontend/server/server.mjs"
+    "serve:ssr:frontend": "node dist/frontend/server/server.mjs",
+    "test:watch": "ng test"
   },
   "private": true,
   "packageManager": "npm@11.19.0",
